@@ -10,15 +10,19 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(212, 168, 83, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, rgba(240, 198, 116, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 50% at 50% 50%, rgba(180, 140, 60, 0.08) 0%, transparent 70%),
+    linear-gradient(160deg, #030305 0%, #0a0a12 40%, #0d0b14 70%, #030305 100%);
+  background-size: 200% 200%, 200% 200%, 150% 150%, 100% 100%;
+  animation: heroMeshDrift 20s ease-in-out infinite;
 }
 
-.heroVideo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
+@keyframes heroMeshDrift {
+  0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%, 0% 0%; }
+  33% { background-position: 40% 60%, 60% 30%, 30% 70%, 0% 0%; }
+  66% { background-position: 80% 20%, 20% 80%, 70% 30%, 0% 0%; }
 }
 
 .heroOverlay {

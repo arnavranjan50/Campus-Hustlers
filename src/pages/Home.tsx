@@ -109,14 +109,6 @@ export default function Home() {
     >
       {/* ────── HERO ────── */}
       <section className={s.hero}>
-        <video
-          className={s.heroVideo}
-          src="/12826842_3840_2160_30fps.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
         <div className={s.heroOverlay} />
         <div className={s.heroOrbs}>
           <div className={s.heroOrbCenter} />
