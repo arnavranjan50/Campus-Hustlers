@@ -11,6 +11,7 @@ import Payment from './pages/Payment'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import About from './pages/About'
+import BookingSuccess from './pages/BookingSuccess'
 import Loader from './components/Loader'
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/about" element={<About />} />
+            <Route path="/booking-success" element={<BookingSuccess />} />
           </Routes>
         </AnimatePresence>
         <Footer />

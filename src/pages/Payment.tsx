@@ -1,19 +1,22 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CreditCard,
-  Smartphone,
-  Building,
   Shield,
   Lock,
   Check,
   Tag,
   Receipt,
   ChevronRight,
+  CreditCard,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react'
 
 import { formatCurrency } from '../utils/formatters'
 import { getBreakdown } from '../utils/fees'
+import { useRazorpay } from '../hooks/useRazorpay'
 
 import s from './Payment.module.css'
 
@@ -43,16 +46,6 @@ const staggerChild = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
 }
 
-/* ── Types ───────────────────────────────────────────── */
-type PaymentMethod = 'upi' | 'card' | 'netbanking'
-
-interface CardForm {
-  number: string
-  expiry: string
-  cvv: string
-  name: string
-}
-
 /* ── Mock Data ───────────────────────────────────────── */
 const mockService = {
   title: 'Full-Stack Web Application Development',
@@ -65,27 +58,18 @@ const mockService = {
   reviews: 47,
 }
 
-const banks = [
-  'State Bank of India',
-  'HDFC Bank',
-  'ICICI Bank',
-  'Axis Bank',
-  'Kotak Mahindra Bank',
-  'Punjab National Bank',
-  'Bank of Baroda',
-  'Yes Bank',
-]
-
 /* ══════════════════════════════════════════════════════ */
 
 export default function Payment() {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi')
-  const [upiId, setUpiId] = useState('')
-  const [card, setCard] = useState<CardForm>({ number: '', expiry: '', cvv: '', name: '' })
-  const [selectedBank, setSelectedBank] = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [paymentId, setPaymentId] = useState('')
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  const { initiatePayment, isProcessing } = useRazorpay()
+  const navigate = useNavigate()
 
   const breakdown = getBreakdown(mockService.price)
   const discountAmount = couponApplied ? couponDiscount : 0
@@ -104,15 +88,42 @@ export default function Payment() {
     }
   }
 
-  const handleCardChange = (field: keyof CardForm, value: string) => {
-    setCard((prev) => ({ ...prev, [field]: value }))
-  }
+  const handlePay = async () => {
+    setPaymentError(null)
 
-  const paymentTabs: { id: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-    { id: 'upi', label: 'UPI', icon: <Smartphone size={18} /> },
-    { id: 'card', label: 'Card', icon: <CreditCard size={18} /> },
-    { id: 'netbanking', label: 'Net Banking', icon: <Building size={18} /> },
-  ]
+    try {
+      const result = await initiatePayment({
+        amount: finalTotal * 100, // Convert to paise
+        currency: 'INR',
+        receipt: `payment_${Date.now()}`,
+        description: mockService.title,
+        prefill: {
+          name: '',
+          email: '',
+        },
+      })
+
+      navigate('/booking-success', {
+        state: {
+          paymentId: result.payment_id,
+          orderId: result.order_id,
+          serviceTitle: mockService.title,
+          serviceProvider: mockService.provider,
+          serviceCollege: mockService.college,
+          servicePrice: mockService.price,
+          platformFee: breakdown.platformFee,
+          totalAmount: finalTotal,
+          customerName: '',
+          customerEmail: '',
+        },
+      })
+    } catch (err: any) {
+      if (err.message === 'PAYMENT_CANCELLED') {
+        return
+      }
+      setPaymentError(err.message || 'Payment failed. Please try again.')
+    }
+  }
 
   return (
     <motion.div
@@ -144,7 +155,7 @@ export default function Payment() {
               Complete Your <span className="gradient-text">Payment</span>
             </motion.h1>
             <motion.p className={s.headerSubtitle} variants={staggerChild}>
-              Review your order and choose a payment method
+              Review your order and pay securely with Razorpay
             </motion.p>
           </motion.div>
         </div>
@@ -237,8 +248,9 @@ export default function Payment() {
                         setCouponDiscount(0)
                       }
                     }}
+                    disabled={paymentSuccess}
                   />
-                  <button className={s.couponBtn} onClick={handleApplyCoupon}>
+                  <button className={s.couponBtn} onClick={handleApplyCoupon} disabled={paymentSuccess}>
                     {couponApplied ? <Check size={16} /> : 'Apply'}
                   </button>
                 </div>
@@ -263,7 +275,7 @@ export default function Payment() {
             </div>
           </motion.div>
 
-          {/* ──── RIGHT: Payment Form ──── */}
+          {/* ──── RIGHT: Payment ──── */}
           <motion.div
             className={s.paymentForm}
             custom={1}
@@ -272,161 +284,109 @@ export default function Payment() {
             variants={fadeUp}
           >
             <div className={`${s.card} glass-card`}>
-              <div className={s.cardHeader}>
-                <CreditCard size={20} />
-                <h3>Payment Method</h3>
-              </div>
-
-              <div className="divider" />
-
-              {/* Payment Method Tabs */}
-              <div className={s.tabs}>
-                {paymentTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    className={`${s.tab} ${paymentMethod === tab.id ? s.tabActive : ''}`}
-                    onClick={() => setPaymentMethod(tab.id)}
+              <AnimatePresence mode="wait">
+                {!paymentSuccess ? (
+                  <motion.div
+                    key="pay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                    {paymentMethod === tab.id && (
+                    <div className={s.cardHeader}>
+                      <CreditCard size={20} />
+                      <h3>Payment</h3>
+                    </div>
+
+                    <div className="divider" />
+
+                    {/* Razorpay info */}
+                    <div className={s.razorpayInfo}>
+                      <div className={s.razorpayBadge}>
+                        <Shield size={18} />
+                        <span>Powered by Razorpay</span>
+                      </div>
+                      <p className={s.razorpayDesc}>
+                        Click the button below to securely pay using UPI, Cards, Net Banking, Wallets, and more — all handled by Razorpay's secure checkout.
+                      </p>
+                    </div>
+
+                    {/* Payment Error */}
+                    {paymentError && (
                       <motion.div
-                        className={s.tabIndicator}
-                        layoutId="paymentTab"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tab Content */}
-              <motion.div
-                className={s.tabContent}
-                key={paymentMethod}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* UPI Tab */}
-                {paymentMethod === 'upi' && (
-                  <div className={s.formGroup}>
-                    <label className={s.label}>UPI ID</label>
-                    <div className={s.inputWrapper}>
-                      <Smartphone size={18} className={s.inputIcon} />
-                      <input
-                        type="text"
-                        placeholder="yourname@upi"
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        className={s.input}
-                      />
-                    </div>
-                    <p className={s.inputHint}>
-                      Enter your UPI ID (e.g., name@paytm, name@okaxis)
-                    </p>
-                  </div>
-                )}
-
-                {/* Card Tab */}
-                {paymentMethod === 'card' && (
-                  <div className={s.cardFields}>
-                    <div className={s.formGroup}>
-                      <label className={s.label}>Card Number</label>
-                      <div className={s.inputWrapper}>
-                        <CreditCard size={18} className={s.inputIcon} />
-                        <input
-                          type="text"
-                          placeholder="1234 5678 9012 3456"
-                          value={card.number}
-                          onChange={(e) => handleCardChange('number', e.target.value)}
-                          className={s.input}
-                          maxLength={19}
-                        />
-                      </div>
-                    </div>
-
-                    <div className={s.formRow}>
-                      <div className={s.formGroup}>
-                        <label className={s.label}>Expiry Date</label>
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          value={card.expiry}
-                          onChange={(e) => handleCardChange('expiry', e.target.value)}
-                          className={s.input}
-                          maxLength={5}
-                        />
-                      </div>
-                      <div className={s.formGroup}>
-                        <label className={s.label}>CVV</label>
-                        <div className={s.inputWrapper}>
-                          <Lock size={18} className={s.inputIcon} />
-                          <input
-                            type="password"
-                            placeholder="•••"
-                            value={card.cvv}
-                            onChange={(e) => handleCardChange('cvv', e.target.value)}
-                            className={s.input}
-                            maxLength={4}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={s.formGroup}>
-                      <label className={s.label}>Name on Card</label>
-                      <input
-                        type="text"
-                        placeholder="Full name as on card"
-                        value={card.name}
-                        onChange={(e) => handleCardChange('name', e.target.value)}
-                        className={s.input}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Net Banking Tab */}
-                {paymentMethod === 'netbanking' && (
-                  <div className={s.formGroup}>
-                    <label className={s.label}>Select Your Bank</label>
-                    <div className={s.inputWrapper}>
-                      <Building size={18} className={s.inputIcon} />
-                      <select
-                        value={selectedBank}
-                        onChange={(e) => setSelectedBank(e.target.value)}
-                        className={s.select}
+                        className={s.payError}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
                       >
-                        <option value="">Choose a bank...</option>
-                        {banks.map((bank) => (
-                          <option key={bank} value={bank}>
-                            {bank}
-                          </option>
-                        ))}
-                      </select>
+                        <AlertTriangle size={14} />
+                        <span>{paymentError}</span>
+                      </motion.div>
+                    )}
+
+                    <div className="divider" />
+
+                    {/* Pay Button */}
+                    <button
+                      className={s.payBtn}
+                      onClick={handlePay}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 size={18} className={s.spinner} />
+                          <span>Processing…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={18} />
+                          <span>Pay {formatCurrency(finalTotal)}</span>
+                          <ChevronRight size={18} />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Security Badge */}
+                    <div className={s.securityBadge}>
+                      <Shield size={16} />
+                      <span>
+                        Your payment is secured with 256-bit SSL encryption via Razorpay.
+                        We never store your card details.
+                      </span>
                     </div>
-                  </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="success"
+                    className={s.successState}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className={s.successIcon}>
+                      <CheckCircle size={56} />
+                    </div>
+                    <h3 className={s.successTitle}>Payment Successful!</h3>
+                    <p className={s.successDesc}>
+                      Your payment of <strong>{formatCurrency(finalTotal)}</strong> for
+                      <strong> {mockService.title}</strong> has been confirmed.
+                    </p>
+                    {paymentId && (
+                      <p className={s.successPaymentId}>
+                        Payment ID: <code>{paymentId}</code>
+                      </p>
+                    )}
+                    <p className={s.successDesc}>
+                      The provider <strong>{mockService.provider}</strong> will reach out to you shortly.
+                    </p>
+                    <div className={s.securityBadge}>
+                      <Shield size={16} />
+                      <span>
+                        Payment verified and secured by Razorpay.
+                      </span>
+                    </div>
+                  </motion.div>
                 )}
-              </motion.div>
-
-              <div className="divider" />
-
-              {/* Pay Button */}
-              <button className={s.payBtn}>
-                <Lock size={18} />
-                <span>Pay {formatCurrency(finalTotal)}</span>
-                <ChevronRight size={18} />
-              </button>
-
-              {/* Security Badge */}
-              <div className={s.securityBadge}>
-                <Shield size={16} />
-                <span>
-                  Your payment is secured with 256-bit SSL encryption. We never store your card
-                  details.
-                </span>
-              </div>
+              </AnimatePresence>
             </div>
           </motion.div>
         </div>

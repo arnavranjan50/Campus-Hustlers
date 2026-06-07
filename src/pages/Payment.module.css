@@ -513,6 +513,127 @@
   line-height: var(--line-height-normal);
 }
 
+/* ---------- Razorpay Info ---------- */
+.razorpayInfo {
+  padding: var(--space-6) 0;
+}
+
+.razorpayBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: rgba(78, 118, 230, 0.08);
+  border: 1px solid rgba(78, 118, 230, 0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: #6c8ce8;
+  margin-bottom: var(--space-4);
+}
+
+.razorpayBadge svg {
+  color: #6c8ce8;
+}
+
+.razorpayDesc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ---------- Payment Error ---------- */
+.payError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: #ef4444;
+  line-height: var(--line-height-normal);
+}
+
+.payError svg {
+  flex-shrink: 0;
+}
+
+/* ---------- Spinner ---------- */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Disabled Button ---------- */
+.payBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ---------- Success State ---------- */
+.successState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8) 0;
+}
+
+.successIcon {
+  color: var(--success);
+  margin-bottom: var(--space-5);
+  animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes successPop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.successTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.successDesc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  max-width: 380px;
+  margin-bottom: var(--space-4);
+}
+
+.successDesc strong {
+  color: var(--text-primary);
+}
+
+.successPaymentId {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-5);
+}
+
+.successPaymentId code {
+  background: var(--bg-elevated);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--accent-gold-light);
+  letter-spacing: 0.02em;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
   .header {
@@ -565,3 +686,4 @@
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+

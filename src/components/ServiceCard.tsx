@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, X, CreditCard, User, Mail, MessageSquare, IndianRupee, CheckCircle } from 'lucide-react'
+import { Clock, X, CreditCard, User, Mail, MessageSquare, CheckCircle, Loader2, AlertTriangle } from 'lucide-react'
 import type { Service } from '../data/services'
 import { truncate, formatCurrency, generateStars } from '../utils/formatters'
 import { useUser } from '../context/UserContext'
+import { useRazorpay } from '../hooks/useRazorpay'
 import styles from './ServiceCard.module.css'
 
 interface ServiceCardProps {
@@ -13,7 +15,10 @@ interface ServiceCardProps {
 export default function ServiceCard({ service }: ServiceCardProps) {
   const [showBooking, setShowBooking] = useState(false)
   const [bookingSubmitted, setBookingSubmitted] = useState(false)
-  const { user, isLoggedIn } = useUser()
+  const [paymentId, setPaymentId] = useState('')
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const { user, isLoggedIn, isStudent } = useUser()
+  const { initiatePayment, isProcessing } = useRazorpay()
 
   const [form, setForm] = useState({
     name: '',
@@ -24,19 +29,63 @@ export default function ServiceCard({ service }: ServiceCardProps) {
   const platformFee = Math.round(service.price * 0.05)
   const totalAmount = service.price + platformFee
 
+  const navigate = useNavigate()
+
   const handleOpenBooking = () => {
+    if (!isLoggedIn) {
+      navigate('/login')
+      return
+    }
+
     setForm({
-      name: isLoggedIn && user ? user.fullName : '',
-      email: isLoggedIn && user ? user.email : '',
+      name: user ? user.fullName : '',
+      email: user ? user.email : '',
       message: '',
     })
     setBookingSubmitted(false)
+    setPaymentError(null)
+    setPaymentId('')
     setShowBooking(true)
   }
 
-  const handleSubmitBooking = () => {
+  const handleSubmitBooking = async () => {
     if (!form.name.trim() || !form.email.trim()) return
-    setBookingSubmitted(true)
+    setPaymentError(null)
+
+    try {
+      const result = await initiatePayment({
+        amount: totalAmount * 100, // Convert to paise
+        currency: 'INR',
+        receipt: `booking_${service.id}_${Date.now()}`,
+        description: service.title,
+        prefill: {
+          name: form.name,
+          email: form.email,
+        },
+      })
+
+      setShowBooking(false)
+      navigate('/booking-success', {
+        state: {
+          paymentId: result.payment_id,
+          orderId: result.order_id,
+          serviceTitle: service.title,
+          serviceProvider: service.provider,
+          serviceCollege: service.college,
+          servicePrice: service.price,
+          platformFee,
+          totalAmount,
+          customerName: form.name,
+          customerEmail: form.email,
+        },
+      })
+    } catch (err: any) {
+      if (err.message === 'PAYMENT_CANCELLED') {
+        // User closed the Razorpay modal — do nothing
+        return
+      }
+      setPaymentError(err.message || 'Payment failed. Please try again.')
+    }
   }
 
   return (
@@ -92,7 +141,9 @@ export default function ServiceCard({ service }: ServiceCardProps) {
               <span className={styles.platformFee}>+5% fee</span>
             </div>
           </div>
-          <button className={styles.bookBtn} onClick={handleOpenBooking}>Book Now</button>
+          {!isStudent && (
+            <button className={styles.bookBtn} onClick={handleOpenBooking}>Book Now</button>
+          )}
         </div>
       </motion.div>
 
@@ -105,7 +156,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            onClick={() => setShowBooking(false)}
+            onClick={() => !isProcessing && setShowBooking(false)}
           >
             <motion.div
               className={styles.modal}
@@ -117,8 +168,9 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             >
               <button
                 className={styles.modalClose}
-                onClick={() => setShowBooking(false)}
+                onClick={() => !isProcessing && setShowBooking(false)}
                 aria-label="Close booking"
+                disabled={isProcessing}
               >
                 <X size={18} />
               </button>
@@ -168,6 +220,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                           placeholder="Full name"
                           value={form.name}
                           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                          disabled={isProcessing}
                         />
                       </div>
                       <div className={styles.bookingField}>
@@ -180,6 +233,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                           placeholder="you@college.edu"
                           value={form.email}
                           onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                          disabled={isProcessing}
                         />
                       </div>
                       <div className={styles.bookingField}>
@@ -192,17 +246,39 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                           rows={3}
                           value={form.message}
                           onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                          disabled={isProcessing}
                         />
                       </div>
                     </div>
 
+                    {/* Payment Error */}
+                    {paymentError && (
+                      <motion.div
+                        className={styles.paymentError}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <AlertTriangle size={14} />
+                        <span>{paymentError}</span>
+                      </motion.div>
+                    )}
+
                     <button
                       className={styles.payBtn}
                       onClick={handleSubmitBooking}
-                      disabled={!form.name.trim() || !form.email.trim()}
+                      disabled={!form.name.trim() || !form.email.trim() || isProcessing}
                     >
-                      <CreditCard size={16} />
-                      Proceed to Payment · {formatCurrency(totalAmount)}
+                      {isProcessing ? (
+                        <>
+                          <Loader2 size={16} className={styles.spinner} />
+                          Processing…
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard size={16} />
+                          Proceed to Payment · {formatCurrency(totalAmount)}
+                        </>
+                      )}
                     </button>
                   </motion.div>
                 ) : (
@@ -216,10 +292,17 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                     <div className={styles.successIcon}>
                       <CheckCircle size={48} />
                     </div>
-                    <h3 className={styles.successTitle}>Booking Confirmed!</h3>
+                    <h3 className={styles.successTitle}>Payment Successful!</h3>
                     <p className={styles.successDesc}>
-                      Your booking for <strong>{service.title}</strong> has been placed.
-                      Payment integration coming soon — the provider will reach out to you at <strong>{form.email}</strong>.
+                      Your booking for <strong>{service.title}</strong> has been confirmed and payment of <strong>{formatCurrency(totalAmount)}</strong> received.
+                    </p>
+                    {paymentId && (
+                      <p className={styles.paymentIdText}>
+                        Payment ID: <code>{paymentId}</code>
+                      </p>
+                    )}
+                    <p className={styles.successDesc}>
+                      The provider will reach out to you at <strong>{form.email}</strong>.
                     </p>
                     <button
                       className={styles.successBtn}

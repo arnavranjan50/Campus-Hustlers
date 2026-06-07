@@ -508,9 +508,55 @@
   transform: translateY(-1px);
 }
 
+/* ---------- Payment Error ---------- */
+.paymentError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: #ef4444;
+  line-height: var(--line-height-normal);
+}
+
+.paymentError svg {
+  flex-shrink: 0;
+}
+
+/* ---------- Spinner ---------- */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Payment ID ---------- */
+.paymentIdText {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.paymentIdText code {
+  background: var(--bg-elevated);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--accent-gold-light);
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 480px) {
   .modal {
     padding: var(--space-6) var(--space-5);
     max-height: 95vh;
   }
 }
+
