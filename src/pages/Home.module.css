@@ -322,9 +322,13 @@
 }
 
 @media (max-width: 768px) {
+  .howItWorks {
+    padding: var(--space-16) 0;
+  }
+
   .stepsGrid {
     grid-template-columns: 1fr;
-    gap: var(--space-10);
+    gap: var(--space-6);
   }
 
   .stepsGrid::before {
@@ -342,6 +346,60 @@
       var(--accent-gold-dark) 85%,
       transparent 100%
     );
+  }
+
+  .stepNumber {
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-4);
+  }
+
+  .stepNumber::after {
+    inset: -4px;
+  }
+
+  .stepIcon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-3);
+  }
+
+  .stepTitle {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-2);
+  }
+
+  .stepDesc {
+    font-size: var(--font-size-xs);
+    max-width: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .howItWorks {
+    padding: var(--space-12) 0;
+  }
+
+  .stepsGrid {
+    gap: var(--space-4);
+  }
+
+  .stepNumber {
+    width: 36px;
+    height: 36px;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-3);
+  }
+
+  .stepIcon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--space-2);
+  }
+
+  .stepTitle {
+    font-size: var(--font-size-md);
   }
 }
 
