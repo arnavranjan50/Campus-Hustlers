@@ -228,3 +228,54 @@
     background-position: 0% 50%;
   }
 }
+
+/* ---------- Mobile Responsive ---------- */
+@media (max-width: 768px) {
+  .logoWrapper {
+    width: 100px;
+    height: 100px;
+  }
+
+  .statusContainer {
+    width: 240px;
+  }
+
+  .content {
+    gap: var(--space-6);
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+    letter-spacing: 0.1em;
+  }
+
+  .subtitle {
+    letter-spacing: 0.2em;
+  }
+}
+
+@media (max-width: 480px) {
+  .logoWrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .statusContainer {
+    width: 200px;
+  }
+
+  .title {
+    font-size: var(--font-size-lg);
+    letter-spacing: 0.08em;
+  }
+
+  .subtitle {
+    letter-spacing: 0.15em;
+    font-size: 0.65rem;
+  }
+
+  .loaderContainer::before {
+    width: 300px;
+    height: 300px;
+  }
+}

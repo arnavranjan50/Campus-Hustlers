@@ -291,6 +291,28 @@
 }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .wrapper {
+    padding: calc(var(--navbar-height) + var(--space-10)) var(--space-4) var(--space-16);
+  }
+
+  .receiptCard {
+    padding: var(--space-7);
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .primaryBtn {
+    padding: var(--space-3) var(--space-6);
+  }
+
+  .emptyTitle {
+    font-size: var(--font-size-xl);
+  }
+}
+
 @media (max-width: 640px) {
   .receiptCard {
     padding: var(--space-6);
@@ -309,5 +331,33 @@
 
   .detailValue {
     text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .wrapper {
+    padding: calc(var(--navbar-height) + var(--space-8)) var(--space-3) var(--space-12);
+  }
+
+  .receiptCard {
+    padding: var(--space-5);
+  }
+
+  .receiptNumber {
+    font-size: var(--font-size-md);
+  }
+
+  .totalValue {
+    font-size: var(--font-size-lg);
+  }
+
+  .primaryBtn {
+    max-width: 100%;
+    font-size: var(--font-size-sm);
+  }
+
+  .secondaryBtn {
+    width: 100%;
+    justify-content: center;
   }
 }

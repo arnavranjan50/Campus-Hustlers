@@ -553,10 +553,54 @@
   letter-spacing: 0.02em;
 }
 
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-5);
+    gap: var(--space-3);
+    border-radius: var(--radius-lg);
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+  }
+
+  .modal {
+    width: 95%;
+    max-width: 420px;
+    padding: var(--space-7) var(--space-6);
+  }
+
+  .serviceTitle {
+    font-size: var(--font-size-lg);
+  }
+
+  .bookBtn {
+    padding: var(--space-3) var(--space-5);
+  }
+}
+
 @media (max-width: 480px) {
+  .card {
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
   .modal {
     padding: var(--space-6) var(--space-5);
     max-height: 95vh;
   }
-}
 
+  .topRow {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .bookBtn {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-sm);
+  }
+}
