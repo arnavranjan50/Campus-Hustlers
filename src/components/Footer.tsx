@@ -17,16 +17,16 @@ export default function Footer() {
               India's premier student marketplace — connecting talented college students with opportunities that matter.
             </p>
             <div className={styles.socials}>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="GitHub">
+              <a href="https://github.com/arnavranjan50" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="GitHub">
                 <Github size={16} />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="Twitter">
+              <a href="https://x.com/arnavranjan50" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="Twitter">
                 <Twitter size={16} />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="LinkedIn">
+              <a href="https://www.linkedin.com/in/arnav-ranjan-972348207" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="LinkedIn">
                 <Linkedin size={16} />
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="Instagram">
+              <a href="https://instagram.com/arnav_ranjan18" target="_blank" rel="noopener noreferrer" className={styles.socialIcon} aria-label="Instagram">
                 <Instagram size={16} />
               </a>
             </div>
@@ -62,11 +62,11 @@ export default function Footer() {
             <ul className={styles.columnLinks}>
               <li className={styles.contactItem}>
                 <Mail size={14} />
-                hello@campushustlers.in
+                arnavranjan50@gmail.com
               </li>
               <li className={styles.contactItem}>
                 <Phone size={14} />
-                +91 98765 43210
+                +91 84465 48117
               </li>
               <li className={styles.contactItem}>
                 <MapPin size={14} />
