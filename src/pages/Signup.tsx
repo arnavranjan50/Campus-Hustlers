@@ -67,7 +67,7 @@ function GitHubIcon() {
 /* ══════════════════════════════════════════════════════ */
 
 export default function Signup() {
-  const { signup } = useUser()
+  const { signupWithEmail, loginWithGoogle, loginWithGithub } = useUser()
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -77,14 +77,58 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
+  const [error, setError] = useState('')
+  const [socialLoading, setSocialLoading] = useState('')
 
   const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!passwordsMatch) return
-    signup({ fullName, email, college })
-    navigate('/dashboard')
+    setError('')
+    try {
+      await signupWithEmail(email, password, { fullName, college })
+      navigate('/dashboard')
+    } catch (err: any) {
+      const code = err?.code || ''
+      if (code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Try logging in.')
+      } else if (code === 'auth/weak-password') {
+        setError('Password should be at least 6 characters.')
+      } else {
+        setError(err?.message || 'Signup failed. Please try again.')
+      }
+    }
+  }
+
+  const handleGoogleSignup = async () => {
+    setError('')
+    setSocialLoading('google')
+    try {
+      await loginWithGoogle()
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setError(err?.message || 'Google sign-up failed.')
+      }
+    } finally {
+      setSocialLoading('')
+    }
+  }
+
+  const handleGithubSignup = async () => {
+    setError('')
+    setSocialLoading('github')
+    try {
+      await loginWithGithub()
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setError(err?.message || 'GitHub sign-up failed.')
+      }
+    } finally {
+      setSocialLoading('')
+    }
   }
 
   return (
@@ -256,6 +300,12 @@ export default function Signup() {
                 <span>Create Account</span>
                 <ArrowRight size={16} className={s.submitArrow} />
               </button>
+
+              {error && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '0.5rem' }}>
+                  {error}
+                </p>
+              )}
             </motion.form>
 
             {/* Divider */}
@@ -265,13 +315,13 @@ export default function Signup() {
 
             {/* Social Auth */}
             <motion.div className={s.socialButtons} variants={fadeUp}>
-              <button type="button" className={s.socialBtn}>
+              <button type="button" className={s.socialBtn} onClick={handleGoogleSignup} disabled={!!socialLoading}>
                 <GoogleIcon />
-                <span>Google</span>
+                <span>{socialLoading === 'google' ? 'Signing up…' : 'Google'}</span>
               </button>
-              <button type="button" className={`${s.socialBtn} ${s.socialBtnGithub}`}>
+              <button type="button" className={`${s.socialBtn} ${s.socialBtnGithub}`} onClick={handleGithubSignup} disabled={!!socialLoading}>
                 <GitHubIcon />
-                <span>GitHub</span>
+                <span>{socialLoading === 'github' ? 'Signing up…' : 'GitHub'}</span>
               </button>
             </motion.div>
 

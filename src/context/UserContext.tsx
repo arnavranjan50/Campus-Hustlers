@@ -1,4 +1,14 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import {
+  auth,
+  onAuthStateChanged,
+  signInWithGoogle,
+  signInWithGithub,
+  emailSignIn,
+  emailSignUp,
+  firebaseSignOut,
+  type User,
+} from '../lib/firebase'
 
 /* ── User Role ────────────────────────────────────────── */
 export type UserRole = 'student' | 'customer'
@@ -17,6 +27,8 @@ export interface UserProfile {
   notifyMessages: boolean
   notifyPromotions: boolean
   notifyWeeklyDigest: boolean
+  photoURL: string
+  provider: 'email' | 'google' | 'github' | 'local'
 }
 
 interface UserContextValue {
@@ -24,10 +36,15 @@ interface UserContextValue {
   isLoggedIn: boolean
   isStudent: boolean
   isCustomer: boolean
+  loading: boolean
   login: (profile: Partial<UserProfile>) => void
   signup: (profile: Partial<UserProfile>) => void
+  loginWithEmail: (email: string, password: string) => Promise<void>
+  signupWithEmail: (email: string, password: string, extra: Partial<UserProfile>) => Promise<void>
+  loginWithGoogle: () => Promise<void>
+  loginWithGithub: () => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => void
-  logout: () => void
+  logout: () => Promise<void>
   getInitials: () => string
 }
 
@@ -46,6 +63,8 @@ const defaultProfile: UserProfile = {
   notifyMessages: true,
   notifyPromotions: false,
   notifyWeeklyDigest: true,
+  photoURL: '',
+  provider: 'local',
 }
 
 /* ── Helpers ─────────────────────────────────────────── */
@@ -67,11 +86,38 @@ function clearUser() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
+function firebaseUserToProfile(firebaseUser: User, provider: 'google' | 'github' | 'email'): Partial<UserProfile> {
+  return {
+    fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+    email: firebaseUser.email || '',
+    photoURL: firebaseUser.photoURL || '',
+    provider,
+  }
+}
+
 /* ── Context ─────────────────────────────────────────── */
 const UserContext = createContext<UserContextValue | undefined>(undefined)
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(() => loadUser())
+  const [loading, setLoading] = useState(true)
+
+  // Listen to Firebase auth state changes
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // If we already have a stored profile for this email, merge
+        const existing = loadUser()
+        if (existing && existing.email === firebaseUser.email) {
+          // Already in sync
+          setUser(existing)
+        }
+        // Otherwise the login/signup methods handle setting the user
+      }
+      setLoading(false)
+    })
+    return unsub
+  }, [])
 
   // Keep localStorage in sync whenever user changes
   useEffect(() => {
@@ -80,6 +126,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
+  /* ── Legacy local auth (kept for backward compat) ─── */
   const signup = (profile: Partial<UserProfile>) => {
     const newUser: UserProfile = { ...defaultProfile, ...profile }
     setUser(newUser)
@@ -87,13 +134,50 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   const login = (profile: Partial<UserProfile>) => {
-    // On login, merge with any existing stored data
     const existing = loadUser()
     const merged: UserProfile = { ...defaultProfile, ...existing, ...profile }
     setUser(merged)
     saveUser(merged)
   }
 
+  /* ── Firebase email/password auth ─────────────────── */
+  const loginWithEmail = async (email: string, password: string) => {
+    const cred = await emailSignIn(email, password)
+    const profile = firebaseUserToProfile(cred.user, 'email')
+    const existing = loadUser()
+    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile }
+    setUser(merged)
+    saveUser(merged)
+  }
+
+  const signupWithEmail = async (email: string, password: string, extra: Partial<UserProfile>) => {
+    const cred = await emailSignUp(email, password)
+    const profile = firebaseUserToProfile(cred.user, 'email')
+    const newUser: UserProfile = { ...defaultProfile, ...profile, ...extra, provider: 'email' }
+    setUser(newUser)
+    saveUser(newUser)
+  }
+
+  /* ── Social auth ──────────────────────────────────── */
+  const loginWithGoogle = async () => {
+    const result = await signInWithGoogle()
+    const profile = firebaseUserToProfile(result.user, 'google')
+    const existing = loadUser()
+    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile, provider: 'google' }
+    setUser(merged)
+    saveUser(merged)
+  }
+
+  const loginWithGithub = async () => {
+    const result = await signInWithGithub()
+    const profile = firebaseUserToProfile(result.user, 'github')
+    const existing = loadUser()
+    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile, provider: 'github' }
+    setUser(merged)
+    saveUser(merged)
+  }
+
+  /* ── Profile management ───────────────────────────── */
   const updateProfile = (updates: Partial<UserProfile>) => {
     setUser((prev) => {
       if (!prev) return prev
@@ -103,7 +187,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await firebaseSignOut()
+    } catch {
+      // Firebase might not have an active session (local-only user)
+    }
     setUser(null)
     clearUser()
   }
@@ -125,8 +214,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         isLoggedIn: !!user,
         isStudent,
         isCustomer,
+        loading,
         login,
         signup,
+        loginWithEmail,
+        signupWithEmail,
+        loginWithGoogle,
+        loginWithGithub,
         updateProfile,
         logout,
         getInitials,

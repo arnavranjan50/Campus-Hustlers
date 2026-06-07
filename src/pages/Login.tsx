@@ -57,23 +57,61 @@ function GitHubIcon() {
 /* ══════════════════════════════════════════════════════ */
 
 export default function Login() {
-  const { login } = useUser()
+  const { loginWithEmail, loginWithGoogle, loginWithGithub } = useUser()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState('')
+  const [socialLoading, setSocialLoading] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // For demo, derive a name from email prefix
-    const namePart = email.split('@')[0].replace(/[._-]/g, ' ')
-    const fullName = namePart
-      .split(' ')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ')
-    login({ email, fullName })
-    navigate('/dashboard')
+    setError('')
+    try {
+      await loginWithEmail(email, password)
+      navigate('/dashboard')
+    } catch (err: any) {
+      const code = err?.code || ''
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+        setError('Invalid email or password.')
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.')
+      } else {
+        setError(err?.message || 'Login failed. Please try again.')
+      }
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setError('')
+    setSocialLoading('google')
+    try {
+      await loginWithGoogle()
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setError(err?.message || 'Google sign-in failed.')
+      }
+    } finally {
+      setSocialLoading('')
+    }
+  }
+
+  const handleGithubLogin = async () => {
+    setError('')
+    setSocialLoading('github')
+    try {
+      await loginWithGithub()
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setError(err?.message || 'GitHub sign-in failed.')
+      }
+    } finally {
+      setSocialLoading('')
+    }
   }
 
   return (
@@ -179,6 +217,12 @@ export default function Login() {
                 <span>Sign In</span>
                 <ArrowRight size={16} className={s.submitArrow} />
               </button>
+
+              {error && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '0.5rem' }}>
+                  {error}
+                </p>
+              )}
             </motion.form>
 
             {/* Divider */}
@@ -188,13 +232,13 @@ export default function Login() {
 
             {/* Social Auth */}
             <motion.div className={s.socialButtons} variants={fadeUp}>
-              <button type="button" className={s.socialBtn}>
+              <button type="button" className={s.socialBtn} onClick={handleGoogleLogin} disabled={!!socialLoading}>
                 <GoogleIcon />
-                <span>Google</span>
+                <span>{socialLoading === 'google' ? 'Signing in…' : 'Google'}</span>
               </button>
-              <button type="button" className={`${s.socialBtn} ${s.socialBtnGithub}`}>
+              <button type="button" className={`${s.socialBtn} ${s.socialBtnGithub}`} onClick={handleGithubLogin} disabled={!!socialLoading}>
                 <GitHubIcon />
-                <span>GitHub</span>
+                <span>{socialLoading === 'github' ? 'Signing in…' : 'GitHub'}</span>
               </button>
             </motion.div>
 
