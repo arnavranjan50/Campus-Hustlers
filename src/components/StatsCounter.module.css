@@ -1,0 +1,105 @@
+/* ============================================================
+   StatsCounter — Animated stat with glass card & gold glow
+   ============================================================ */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md), var(--shadow-inset);
+  overflow: hidden;
+  transition: transform var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), var(--shadow-gold);
+  border-color: var(--border-strong);
+}
+
+/* Decorative gold glow orb behind the number */
+.glowOrb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -60%);
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle, rgba(212, 168, 83, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+  animation: orbPulse 4s ease-in-out infinite;
+}
+
+/* Animated number */
+.value {
+  position: relative;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 12px rgba(212, 168, 83, 0.3));
+}
+
+/* Label beneath the number */
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+/* Pulse animation for the glow orb */
+@keyframes orbPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -60%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1.4);
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .value {
+    font-size: var(--font-size-2xl);
+  }
+
+  .label {
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .value {
+    font-size: var(--font-size-xl);
+  }
+}

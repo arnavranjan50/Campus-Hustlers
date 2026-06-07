@@ -1,0 +1,133 @@
+/* ============================================================
+   TestimonialCard — Glass card for student testimonials
+   ============================================================ */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6) var(--space-6);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md), var(--shadow-inset);
+  height: 100%;
+  overflow: hidden;
+  transition: transform var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), var(--shadow-gold);
+  border-color: var(--border-strong);
+}
+
+/* ---------- Decorative Quote ---------- */
+.quoteMark {
+  position: absolute;
+  top: -6px;
+  left: var(--space-5);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 5rem;
+  line-height: 1;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.25;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Review Text ---------- */
+.text {
+  position: relative;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+  flex: 1;
+}
+
+/* ---------- Stars ---------- */
+.stars {
+  color: var(--accent-gold);
+  font-size: var(--font-size-base);
+  letter-spacing: 2px;
+}
+
+/* ---------- Divider ---------- */
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border-default) 20%,
+    rgba(212, 168, 83, 0.3) 50%,
+    var(--border-default) 80%,
+    transparent 100%
+  );
+}
+
+/* ---------- Author ---------- */
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-accent);
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(212, 168, 83, 0.25);
+}
+
+.authorInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.college {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-6) var(--space-5) var(--space-5);
+  }
+
+  .quoteMark {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+
+  .quoteMark {
+    font-size: 3.5rem;
+  }
+}

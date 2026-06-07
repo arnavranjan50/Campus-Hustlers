@@ -1,0 +1,230 @@
+.loaderContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-deepest);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-toast); /* High z-index to overlay everything */
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+/* Premium radial blur background */
+.loaderContainer::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 168, 83, 0.08) 0%, rgba(212, 168, 83, 0) 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: pulseGlow 4s ease-in-out infinite alternate;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  position: relative;
+  z-index: 10;
+}
+
+/* Logo Animation Container */
+.logoWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glowing outer ring spinning clockwise */
+.outerRing {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold-dark);
+  border-radius: 50%;
+  animation: spinClockwise 2.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  filter: drop-shadow(0 0 8px rgba(212, 168, 83, 0.4));
+}
+
+/* Inner ring spinning counter-clockwise */
+.innerRing {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  border: 1.5px dashed var(--accent-gold-light);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: spinCounter 3.5s linear infinite;
+}
+
+/* Central emblem containing the icon */
+.logoEmblem {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, var(--bg-elevated) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-gold), inset 0 2px 8px rgba(255, 255, 255, 0.05);
+  animation: floatEmblem 3s ease-in-out infinite;
+}
+
+.logoIcon {
+  color: var(--accent-gold);
+  filter: drop-shadow(0 0 6px var(--accent-gold));
+  animation: pulseIcon 1.5s ease-in-out infinite alternate;
+}
+
+/* Text Branding */
+.branding {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(212, 168, 83, 0.25));
+  animation: shimmerTitle 3s linear infinite;
+}
+
+.subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-weight: var(--font-weight-medium);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Status Indicator */
+.statusContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 280px;
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid rgba(212, 168, 83, 0.05);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-gold-dark), var(--accent-gold-light), var(--accent-gold));
+  box-shadow: 0 0 10px var(--accent-gold);
+  border-radius: var(--radius-full);
+  transition: width 0.1s linear;
+}
+
+.statusText {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  height: 16px;
+  text-align: center;
+  transition: opacity 0.2s ease;
+  letter-spacing: 0.05em;
+  text-transform: capitalize;
+}
+
+/* --- Keyframe Animations --- */
+
+@keyframes pulseGlow {
+  0% {
+    width: 450px;
+    height: 450px;
+    opacity: 0.8;
+  }
+  100% {
+    width: 600px;
+    height: 600px;
+    opacity: 1.2;
+  }
+}
+
+@keyframes spinClockwise {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinCounter {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes floatEmblem {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+
+@keyframes pulseIcon {
+  0% {
+    transform: scale(0.9);
+    filter: drop-shadow(0 0 4px var(--accent-gold));
+  }
+  100% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 12px var(--accent-gold-light));
+  }
+}
+
+@keyframes shimmerTitle {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
