@@ -27,6 +27,7 @@
     "@types/express": "^5.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vercel/node": "^5.8.17",
     "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^10.0.3",
     "tsx": "^4.22.4",
