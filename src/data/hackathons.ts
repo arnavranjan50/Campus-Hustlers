@@ -8,14 +8,15 @@ export interface Hackathon {
   registrationDeadline: string
   mode: 'Online' | 'Offline' | 'Hybrid'
   category: string
-  prize: number
-  currency: string
+  prize: number | string
+  currency?: string
   teamSize: string
   location?: string
   website: string
   tags: string[]
   featured?: boolean
   image?: string
+  source?: string
 }
 
 export const hackathonCategories = [

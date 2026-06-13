@@ -1,7 +1,14 @@
 {
+  "crons": [
+    {
+      "path": "/api/fetch-hackathons",
+      "schedule": "0 6,18 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/create-order", "destination": "/api/create-order" },
     { "source": "/api/verify-payment", "destination": "/api/verify-payment" },
+    { "source": "/api/fetch-hackathons", "destination": "/api/fetch-hackathons" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

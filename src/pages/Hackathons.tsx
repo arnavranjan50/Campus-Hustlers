@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Trophy, Compass, Wifi, MapPin, Monitor, PackageOpen } from 'lucide-react'
+import { Search, Trophy, Compass, Wifi, MapPin, Monitor, PackageOpen, RefreshCw, Loader2 } from 'lucide-react'
 
 import HackathonCard from '../components/HackathonCard'
-import { hackathons, hackathonCategories, hackathonModes } from '../data/hackathons'
-import type { HackathonCategory, HackathonMode } from '../data/hackathons'
+import { hackathons as staticHackathons, hackathonCategories, hackathonModes } from '../data/hackathons'
+import type { Hackathon, HackathonCategory, HackathonMode } from '../data/hackathons'
+import { getLiveHackathons, getHackathonsMeta } from '../lib/firestore'
 import { useSearch } from '../hooks/useSearch'
 
 import s from './Hackathons.module.css'
@@ -39,11 +40,73 @@ const modeIcons: Record<string, React.ReactNode> = {
   Hybrid: <Monitor size={14} />,
 }
 
+/* ── Time ago helper ─────────────────────────────────── */
+function timeAgo(date: Date): string {
+  const diff = Date.now() - date.getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
 /* ══════════════════════════════════════════════════════ */
 
 export default function Hackathons() {
   const [activeCategory, setActiveCategory] = useState<HackathonCategory>('All')
   const [activeMode, setActiveMode] = useState<HackathonMode>('All')
+  const [hackathons, setHackathons] = useState<Hackathon[]>(staticHackathons)
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [isLiveData, setIsLiveData] = useState(false)
+
+  // Fetch live hackathons from Firestore
+  useEffect(() => {
+    async function fetchLive() {
+      try {
+        const [liveData, meta] = await Promise.all([
+          getLiveHackathons(),
+          getHackathonsMeta(),
+        ])
+
+        if (liveData.length > 0) {
+          // Map Firestore data to Hackathon type
+          const mapped: Hackathon[] = liveData.map((h) => ({
+            id: h.id || `live-${Math.random().toString(36).slice(2)}`,
+            title: h.title,
+            organizer: h.organizer,
+            description: h.description,
+            startDate: h.startDate,
+            endDate: h.endDate,
+            registrationDeadline: h.registrationDeadline || h.endDate,
+            mode: h.mode,
+            category: h.category,
+            prize: h.prize,
+            teamSize: h.teamSize,
+            location: h.location,
+            website: h.website,
+            tags: h.tags || [],
+            featured: h.featured,
+            source: h.source,
+          }))
+          setHackathons(mapped)
+          setIsLiveData(true)
+        }
+        // else: keep static data as fallback
+
+        if (meta?.lastFetchedAt) {
+          setLastUpdated(meta.lastFetchedAt)
+        }
+      } catch (err) {
+        console.warn('Failed to fetch live hackathons, using static data:', err)
+        // Keep static data
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchLive()
+  }, [])
 
   /* search hook — searches title, description, tags, organizer */
   const { query, setQuery, filteredItems: searchFiltered } = useSearch(
@@ -100,7 +163,9 @@ export default function Hackathons() {
             transition={{ delay: 0.1, duration: 0.5 }}
           >
             <Trophy size={14} />
-            <span>{hackathons.length} Hackathons Listed</span>
+            <span>
+              {loading ? 'Loading...' : `${hackathons.length} Hackathons Listed`}
+            </span>
           </motion.div>
 
           <motion.h1
@@ -119,6 +184,13 @@ export default function Hackathons() {
             transition={{ delay: 0.35, duration: 0.5 }}
           >
             Find the best hackathons from around the world — compete, collaborate, and win incredible prizes.
+            {isLiveData && (
+              <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--accent-gold)', marginTop: 'var(--space-2)', opacity: 0.8 }}>
+                <RefreshCw size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+                Live data • Refreshes automatically twice daily
+                {lastUpdated && ` • Updated ${timeAgo(lastUpdated)}`}
+              </span>
+            )}
           </motion.p>
 
           {/* Search Bar */}
@@ -213,45 +285,52 @@ export default function Hackathons() {
             )}
           </motion.div>
 
-          {/* Hackathons Grid */}
-          <AnimatePresence mode="wait">
-            {displayedHackathons.length > 0 ? (
-              <motion.div
-                className={s.grid}
-                key={`${activeCategory}-${activeMode}-${query}`}
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-              >
-                {displayedHackathons.map((h) => (
-                  <motion.div key={h.id} variants={staggerChild}>
-                    <HackathonCard hackathon={h} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                className={s.emptyState}
-                key="empty"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className={s.emptyIcon}>
-                  <PackageOpen size={48} />
-                </div>
-                <h3 className={s.emptyTitle}>No hackathons found</h3>
-                <p className={s.emptyDesc}>
-                  Try adjusting your search, category, or mode filters to find more hackathons.
-                </p>
-                <button className="btn btn-outline" onClick={clearAllFilters}>
-                  Clear All Filters
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Loading State */}
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-16) 0' }}>
+              <Loader2 size={32} style={{ color: 'var(--accent-gold)', animation: 'spin 1s linear infinite' }} />
+            </div>
+          ) : (
+            /* Hackathons Grid */
+            <AnimatePresence mode="wait">
+              {displayedHackathons.length > 0 ? (
+                <motion.div
+                  className={s.grid}
+                  key={`${activeCategory}-${activeMode}-${query}`}
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  {displayedHackathons.map((h) => (
+                    <motion.div key={h.id} variants={staggerChild}>
+                      <HackathonCard hackathon={h} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  className={s.emptyState}
+                  key="empty"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className={s.emptyIcon}>
+                    <PackageOpen size={48} />
+                  </div>
+                  <h3 className={s.emptyTitle}>No hackathons found</h3>
+                  <p className={s.emptyDesc}>
+                    Try adjusting your search, category, or mode filters to find more hackathons.
+                  </p>
+                  <button className="btn btn-outline" onClick={clearAllFilters}>
+                    Clear All Filters
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </section>
     </motion.div>

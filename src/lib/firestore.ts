@@ -192,3 +192,43 @@ export function calculateEarnings(bookings: FirestoreBooking[]) {
 
   return { totalEarnings, thisMonth, monthlyEarnings }
 }
+
+/* ── Hackathons (Live Data) ──────────────────────────── */
+
+export interface FirestoreHackathon {
+  id?: string
+  title: string
+  organizer: string
+  description: string
+  startDate: string
+  endDate: string
+  registrationDeadline: string
+  mode: 'Online' | 'Offline' | 'Hybrid'
+  category: string
+  prize: string
+  teamSize: string
+  location: string
+  website: string
+  tags: string[]
+  featured: boolean
+  source: string
+  image: string
+  fetchedAt?: Timestamp
+}
+
+export async function getLiveHackathons(): Promise<FirestoreHackathon[]> {
+  const q = query(collection(db, 'hackathons'), orderBy('fetchedAt', 'desc'))
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreHackathon))
+}
+
+export async function getHackathonsMeta(): Promise<{ lastFetchedAt: Date | null; totalCount: number } | null> {
+  const ref = doc(db, 'metadata', 'hackathons')
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return null
+  const data = snap.data()
+  return {
+    lastFetchedAt: data.lastFetchedAt?.toDate?.() || null,
+    totalCount: data.totalCount || 0,
+  }
+}

@@ -71,9 +71,13 @@ export default function HackathonCard({ hackathon }: HackathonCardProps) {
       <div className={s.prizeRow}>
         <Trophy size={16} className={s.prizeIcon} />
         <span className={s.prizeAmount}>
-          {formatCurrency(hackathon.prize)}
+          {typeof hackathon.prize === 'number'
+            ? formatCurrency(hackathon.prize)
+            : hackathon.prize || 'Prizes available'}
         </span>
-        <span className={s.prizeLabel}>in prizes</span>
+        {typeof hackathon.prize === 'number' && (
+          <span className={s.prizeLabel}>in prizes</span>
+        )}
       </div>
 
       {/* Tags */}
