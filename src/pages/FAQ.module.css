@@ -1,0 +1,282 @@
+/* ============================================================
+   FAQ PAGE — Campus Hustlers
+   ============================================================ */
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  padding: calc(var(--navbar-height) + var(--space-20)) 0 var(--space-16);
+  text-align: center;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.heroOrbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.heroOrbLeft,
+.heroOrbRight,
+.heroOrbCenter {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  animation: float 8s ease-in-out infinite;
+}
+
+.heroOrbLeft {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(212, 168, 83, 0.10) 0%, transparent 70%);
+  top: 5%;
+  left: -8%;
+}
+
+.heroOrbRight {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(240, 198, 116, 0.07) 0%, transparent 70%);
+  bottom: 10%;
+  right: -6%;
+  animation-delay: -3s;
+}
+
+.heroOrbCenter {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(232, 185, 74, 0.05) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -5s;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: rgba(212, 168, 83, 0.10);
+  border: 1px solid rgba(212, 168, 83, 0.20);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-gold-light);
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-8);
+  backdrop-filter: blur(12px);
+}
+
+.heroTitle {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+}
+
+.heroSubtitle {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ---------- FAQ Content ---------- */
+.faqSection {
+  padding: var(--space-16) 0 var(--space-24);
+  background: var(--bg-base);
+}
+
+.faqGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ---------- Category ---------- */
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.categoryIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid var(--border-default);
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.categoryTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+/* ---------- Accordion Item ---------- */
+.accordionItem {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.accordionItem:hover {
+  border-color: var(--border-default);
+}
+
+.accordionItemOpen {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md), 0 0 30px rgba(212, 168, 83, 0.04);
+}
+
+.accordionTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-5) var(--space-6);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: var(--space-4);
+}
+
+.accordionQuestion {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--line-height-snug);
+}
+
+.accordionItemOpen .accordionQuestion {
+  color: var(--accent-gold-light);
+}
+
+.accordionChevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform var(--duration-normal) var(--ease-out),
+              color var(--duration-normal) var(--ease-out);
+}
+
+.accordionItemOpen .accordionChevron {
+  transform: rotate(180deg);
+  color: var(--accent-gold);
+}
+
+.accordionContent {
+  overflow: hidden;
+}
+
+.accordionAnswer {
+  padding: 0 var(--space-6) var(--space-6);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ---------- CTA ---------- */
+.cta {
+  padding: var(--space-16) 0;
+  background: var(--bg-dark);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ctaContent {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.ctaTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.ctaText {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  line-height: var(--line-height-normal);
+}
+
+.ctaActions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .hero {
+    padding: calc(var(--navbar-height) + var(--space-12)) 0 var(--space-10);
+  }
+
+  .accordionTrigger {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .accordionAnswer {
+    padding: 0 var(--space-5) var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .categoryHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .ctaActions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* ---------- Animations ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}

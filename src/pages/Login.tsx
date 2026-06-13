@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext'
-import { Mail, Lock, Eye, EyeOff, LogIn, ArrowRight } from 'lucide-react'
+import type { UserRole } from '../context/UserContext'
+import { Mail, Lock, Eye, EyeOff, LogIn, ArrowRight, ShoppingBag, GraduationCap } from 'lucide-react'
 
 import s from './Login.module.css'
 
@@ -65,12 +66,13 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [socialLoading, setSocialLoading] = useState('')
+  const [selectedRole, setSelectedRole] = useState<UserRole>('customer')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     try {
-      await loginWithEmail(email, password)
+      await loginWithEmail(email, password, selectedRole)
       navigate('/dashboard')
     } catch (err: any) {
       const code = err?.code || ''
@@ -88,7 +90,7 @@ export default function Login() {
     setError('')
     setSocialLoading('google')
     try {
-      await loginWithGoogle()
+      await loginWithGoogle(selectedRole)
       navigate('/dashboard')
     } catch (err: any) {
       if (err?.code !== 'auth/popup-closed-by-user') {
@@ -103,7 +105,7 @@ export default function Login() {
     setError('')
     setSocialLoading('github')
     try {
-      await loginWithGithub()
+      await loginWithGithub(selectedRole)
       navigate('/dashboard')
     } catch (err: any) {
       if (err?.code !== 'auth/popup-closed-by-user') {
@@ -148,6 +150,26 @@ export default function Login() {
               </div>
               <h1 className={s.title}>Welcome Back</h1>
               <p className={s.subtitle}>Sign in to continue your hustle</p>
+            </motion.div>
+
+            {/* Role Toggle */}
+            <motion.div className={s.roleToggle} variants={fadeUp}>
+              <button
+                type="button"
+                className={`${s.roleBtn} ${selectedRole === 'customer' ? s.roleBtnActive : ''}`}
+                onClick={() => setSelectedRole('customer')}
+              >
+                <ShoppingBag size={16} />
+                I'm a Customer
+              </button>
+              <button
+                type="button"
+                className={`${s.roleBtn} ${selectedRole === 'student' ? s.roleBtnActive : ''}`}
+                onClick={() => setSelectedRole('student')}
+              >
+                <GraduationCap size={16} />
+                I'm a Student
+              </button>
             </motion.div>
 
             {/* Form */}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext'
+import type { UserRole } from '../context/UserContext'
 import {
   User,
   Mail,
@@ -12,6 +13,7 @@ import {
   UserPlus,
   ArrowRight,
   ShieldCheck,
+  ShoppingBag,
 } from 'lucide-react'
 
 import s from './Signup.module.css'
@@ -79,6 +81,7 @@ export default function Signup() {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [error, setError] = useState('')
   const [socialLoading, setSocialLoading] = useState('')
+  const [selectedRole, setSelectedRole] = useState<UserRole>('customer')
 
   const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
@@ -87,7 +90,7 @@ export default function Signup() {
     if (!passwordsMatch) return
     setError('')
     try {
-      await signupWithEmail(email, password, { fullName, college })
+      await signupWithEmail(email, password, { fullName, college, role: selectedRole })
       navigate('/dashboard')
     } catch (err: any) {
       const code = err?.code || ''
@@ -105,7 +108,7 @@ export default function Signup() {
     setError('')
     setSocialLoading('google')
     try {
-      await loginWithGoogle()
+      await loginWithGoogle(selectedRole)
       navigate('/dashboard')
     } catch (err: any) {
       if (err?.code !== 'auth/popup-closed-by-user') {
@@ -120,7 +123,7 @@ export default function Signup() {
     setError('')
     setSocialLoading('github')
     try {
-      await loginWithGithub()
+      await loginWithGithub(selectedRole)
       navigate('/dashboard')
     } catch (err: any) {
       if (err?.code !== 'auth/popup-closed-by-user') {
@@ -165,6 +168,26 @@ export default function Signup() {
               </div>
               <h1 className={s.title}>Create Account</h1>
               <p className={s.subtitle}>Join the campus hustle — it&apos;s free</p>
+            </motion.div>
+
+            {/* Role Toggle */}
+            <motion.div className={s.roleToggle} variants={fadeUp}>
+              <button
+                type="button"
+                className={`${s.roleBtn} ${selectedRole === 'customer' ? s.roleBtnActive : ''}`}
+                onClick={() => setSelectedRole('customer')}
+              >
+                <ShoppingBag size={16} />
+                I'm a Customer
+              </button>
+              <button
+                type="button"
+                className={`${s.roleBtn} ${selectedRole === 'student' ? s.roleBtnActive : ''}`}
+                onClick={() => setSelectedRole('student')}
+              >
+                <GraduationCap size={16} />
+                I'm a Student
+              </button>
             </motion.div>
 
             {/* Form */}

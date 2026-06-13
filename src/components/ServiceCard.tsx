@@ -6,6 +6,7 @@ import type { Service } from '../data/services'
 import { truncate, formatCurrency, generateStars } from '../utils/formatters'
 import { useUser } from '../context/UserContext'
 import { useRazorpay } from '../hooks/useRazorpay'
+import { createBooking } from '../lib/firestore'
 import styles from './ServiceCard.module.css'
 
 interface ServiceCardProps {
@@ -64,11 +65,39 @@ export default function ServiceCard({ service }: ServiceCardProps) {
         },
       })
 
+      const receiptNumber = `CH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${result.payment_id.slice(-8).toUpperCase()}`
+
+      // Save booking to Firestore
+      try {
+        await createBooking({
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceCategory: service.category,
+          studentId: '', // Will be matched by service provider later
+          studentName: service.provider,
+          customerId: user?.uid || '',
+          customerName: form.name,
+          customerEmail: form.email,
+          amount: service.price,
+          platformFee,
+          total: totalAmount,
+          status: 'completed',
+          paymentId: result.payment_id,
+          orderId: result.order_id,
+          receiptNumber,
+          message: form.message,
+        })
+      } catch {
+        // Don't block navigation if Firestore save fails
+        console.warn('Failed to save booking to Firestore')
+      }
+
       setShowBooking(false)
       navigate('/booking-success', {
         state: {
           paymentId: result.payment_id,
           orderId: result.order_id,
+          receiptNumber,
           serviceTitle: service.title,
           serviceProvider: service.provider,
           serviceCollege: service.college,
@@ -81,7 +110,6 @@ export default function ServiceCard({ service }: ServiceCardProps) {
       })
     } catch (err: any) {
       if (err.message === 'PAYMENT_CANCELLED') {
-        // User closed the Razorpay modal — do nothing
         return
       }
       setPaymentError(err.message || 'Payment failed. Please try again.')

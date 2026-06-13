@@ -9,12 +9,14 @@ import {
   firebaseSignOut,
   type User,
 } from '../lib/firebase'
+import { saveUserProfile, getUserProfile } from '../lib/firestore'
 
 /* ── User Role ────────────────────────────────────────── */
 export type UserRole = 'student' | 'customer'
 
 /* ── User Profile Shape ───────────────────────────────── */
 export interface UserProfile {
+  uid: string
   fullName: string
   email: string
   college: string
@@ -39,10 +41,10 @@ interface UserContextValue {
   loading: boolean
   login: (profile: Partial<UserProfile>) => void
   signup: (profile: Partial<UserProfile>) => void
-  loginWithEmail: (email: string, password: string) => Promise<void>
+  loginWithEmail: (email: string, password: string, role?: UserRole) => Promise<void>
   signupWithEmail: (email: string, password: string, extra: Partial<UserProfile>) => Promise<void>
-  loginWithGoogle: () => Promise<void>
-  loginWithGithub: () => Promise<void>
+  loginWithGoogle: (role?: UserRole) => Promise<void>
+  loginWithGithub: (role?: UserRole) => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => void
   logout: () => Promise<void>
   getInitials: () => string
@@ -51,6 +53,7 @@ interface UserContextValue {
 const STORAGE_KEY = 'campus_hustlers_user'
 
 const defaultProfile: UserProfile = {
+  uid: '',
   fullName: '',
   email: '',
   college: '',
@@ -86,12 +89,18 @@ function clearUser() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
-function firebaseUserToProfile(firebaseUser: User, provider: 'google' | 'github' | 'email'): Partial<UserProfile> {
+function firebaseUserToProfile(
+  firebaseUser: User,
+  provider: 'google' | 'github' | 'email',
+  role: UserRole = 'customer'
+): Partial<UserProfile> {
   return {
+    uid: firebaseUser.uid,
     fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
     email: firebaseUser.email || '',
     photoURL: firebaseUser.photoURL || '',
     provider,
+    role,
   }
 }
 
@@ -104,15 +113,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Listen to Firebase auth state changes
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // If we already have a stored profile for this email, merge
-        const existing = loadUser()
-        if (existing && existing.email === firebaseUser.email) {
-          // Already in sync
-          setUser(existing)
+        // Try loading from Firestore first
+        try {
+          const firestoreProfile = await getUserProfile(firebaseUser.uid)
+          if (firestoreProfile) {
+            const profile: UserProfile = {
+              ...defaultProfile,
+              ...firestoreProfile,
+              uid: firebaseUser.uid,
+            }
+            setUser(profile)
+            saveUser(profile)
+          } else {
+            // Firestore doesn't have this user yet — use local
+            const local = loadUser()
+            if (local) setUser(local)
+          }
+        } catch {
+          // Firestore unavailable — use local
+          const local = loadUser()
+          if (local) setUser(local)
         }
-        // Otherwise the login/signup methods handle setting the user
       }
       setLoading(false)
     })
@@ -141,48 +164,89 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   /* ── Firebase email/password auth ─────────────────── */
-  const loginWithEmail = async (email: string, password: string) => {
+  const loginWithEmail = async (email: string, password: string, role?: UserRole) => {
     const cred = await emailSignIn(email, password)
-    const profile = firebaseUserToProfile(cred.user, 'email')
-    const existing = loadUser()
-    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile }
+    const profile = firebaseUserToProfile(cred.user, 'email', role)
+
+    // Try to get existing Firestore profile
+    let firestoreData = await getUserProfile(cred.user.uid)
+    let merged: UserProfile
+
+    if (firestoreData) {
+      // Existing user — merge, but use Firestore role
+      merged = { ...defaultProfile, ...firestoreData, ...profile, role: firestoreData.role }
+    } else {
+      // New login — save to Firestore
+      merged = { ...defaultProfile, ...profile }
+      await saveUserProfile(cred.user.uid, merged)
+    }
+
     setUser(merged)
     saveUser(merged)
   }
 
   const signupWithEmail = async (email: string, password: string, extra: Partial<UserProfile>) => {
     const cred = await emailSignUp(email, password)
-    const profile = firebaseUserToProfile(cred.user, 'email')
-    const newUser: UserProfile = { ...defaultProfile, ...profile, ...extra, provider: 'email' }
+    const profile = firebaseUserToProfile(cred.user, 'email', extra.role || 'customer')
+    const newUser: UserProfile = { ...defaultProfile, ...profile, ...extra, provider: 'email', uid: cred.user.uid }
+
+    // Save to Firestore
+    await saveUserProfile(cred.user.uid, newUser)
+
     setUser(newUser)
     saveUser(newUser)
   }
 
   /* ── Social auth ──────────────────────────────────── */
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (role?: UserRole) => {
     const result = await signInWithGoogle()
-    const profile = firebaseUserToProfile(result.user, 'google')
-    const existing = loadUser()
-    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile, provider: 'google' }
+    const profile = firebaseUserToProfile(result.user, 'google', role)
+
+    // Check if user exists in Firestore
+    let firestoreData = await getUserProfile(result.user.uid)
+    let merged: UserProfile
+
+    if (firestoreData) {
+      merged = { ...defaultProfile, ...firestoreData, ...profile, role: firestoreData.role, provider: 'google' }
+    } else {
+      merged = { ...defaultProfile, ...profile }
+      await saveUserProfile(result.user.uid, merged)
+    }
+
     setUser(merged)
     saveUser(merged)
   }
 
-  const loginWithGithub = async () => {
+  const loginWithGithub = async (role?: UserRole) => {
     const result = await signInWithGithub()
-    const profile = firebaseUserToProfile(result.user, 'github')
-    const existing = loadUser()
-    const merged: UserProfile = { ...defaultProfile, ...existing, ...profile, provider: 'github' }
+    const profile = firebaseUserToProfile(result.user, 'github', role)
+
+    let firestoreData = await getUserProfile(result.user.uid)
+    let merged: UserProfile
+
+    if (firestoreData) {
+      merged = { ...defaultProfile, ...firestoreData, ...profile, role: firestoreData.role, provider: 'github' }
+    } else {
+      merged = { ...defaultProfile, ...profile }
+      await saveUserProfile(result.user.uid, merged)
+    }
+
     setUser(merged)
     saveUser(merged)
   }
 
   /* ── Profile management ───────────────────────────── */
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     setUser((prev) => {
       if (!prev) return prev
       const updated = { ...prev, ...updates }
       saveUser(updated)
+
+      // Also sync to Firestore if we have a uid
+      if (updated.uid) {
+        saveUserProfile(updated.uid, updates).catch(() => {})
+      }
+
       return updated
     })
   }
@@ -191,7 +255,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut()
     } catch {
-      // Firebase might not have an active session (local-only user)
+      // Firebase might not have an active session
     }
     setUser(null)
     clearUser()
