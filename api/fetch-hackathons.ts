@@ -212,50 +212,75 @@ async function fetchMLH(): Promise<ScrapedHackathon[]> {
   return hackathons
 }
 
-/* ── Devfolio Scraper ────────────────────────────────── */
+/* ── Devfolio API ────────────────────────────────────── */
 async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
   const hackathons: ScrapedHackathon[] = []
   try {
-    const res = await fetch('https://devfolio.co/hackathons', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)' },
+    // Devfolio's internal search API (returns JSON)
+    const res = await fetch('https://api.devfolio.co/api/search/hackathons', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
+      },
+      body: JSON.stringify({
+        type: 'default',
+        from: 0,
+        size: 20,
+        status: ['upcoming', 'open'],
+      }),
     })
-    if (!res.ok) return hackathons
 
-    const html = await res.text()
-    const $ = cheerio.load(html)
+    if (!res.ok) {
+      console.log(`Devfolio API returned ${res.status}`)
+      return hackathons
+    }
 
-    // Devfolio renders hackathon cards
-    $('[class*="HackathonCard"], [class*="hackathon-card"], .hackathon-tile').each((_, el) => {
-      const $el = $(el)
-      const title = $el.find('h3, h4, [class*="name"], [class*="title"]').first().text().trim()
-      const link = $el.find('a').first().attr('href') || ''
-      const desc = $el.find('p, [class*="tagline"]').first().text().trim()
-      const date = $el.find('[class*="date"], [class*="time"]').text().trim()
-      const location = $el.find('[class*="location"], [class*="mode"]').text().trim()
+    const data = await res.json()
+    const hits = data?.hits?.hits || []
 
-      if (title && title.length > 3) {
+    for (const hit of hits) {
+      const h = hit._source || {}
+      const name = h.name || ''
+      const slug = h.slug || ''
+      const tagline = h.tagline || h.description || ''
+      const starts = h.starts_at || ''
+      const ends = h.ends_at || ''
+      const regDeadline = h.reg_ends_at || ends
+      const hackMode = h.is_online ? 'Online' : (h.is_hybrid ? 'Hybrid' : 'Offline')
+      const loc = h.location || (h.is_online ? 'Online' : 'India')
+      const prizeText = h.prize_amount
+        ? `₹${Number(h.prize_amount).toLocaleString('en-IN')}`
+        : (h.prize_currency && h.prize_value ? `${h.prize_currency} ${h.prize_value}` : 'Prizes available')
+
+      // Convert ISO dates to readable format
+      const startDate = starts ? new Date(starts).toISOString().split('T')[0] : ''
+      const endDate = ends ? new Date(ends).toISOString().split('T')[0] : ''
+      const regEnd = regDeadline ? new Date(regDeadline).toISOString().split('T')[0] : ''
+
+      if (name) {
         hackathons.push({
-          title,
+          title: name,
           organizer: 'Devfolio',
-          description: desc,
-          startDate: date,
-          endDate: '',
-          registrationDeadline: '',
-          mode: guessMode(location || title),
-          category: guessCategory(title, desc, []),
-          prize: 'Prizes available',
-          teamSize: '1-5',
-          location: location || 'India',
-          website: link.startsWith('http') ? link : `https://devfolio.co${link}`,
-          tags: ['Devfolio'],
-          featured: false,
+          description: tagline,
+          startDate,
+          endDate,
+          registrationDeadline: regEnd,
+          mode: hackMode,
+          category: guessCategory(name, tagline, h.themes || []),
+          prize: prizeText,
+          teamSize: h.team_min && h.team_max ? `${h.team_min}-${h.team_max}` : '1-5',
+          location: loc,
+          website: `https://devfolio.co/hackathons/${slug}`,
+          tags: (h.themes || []).slice(0, 5),
+          featured: h.is_featured || false,
           source: 'devfolio',
-          image: '',
+          image: h.logo || '',
         })
       }
-    })
+    }
   } catch (err) {
-    console.error('Devfolio scraping failed:', err)
+    console.error('Devfolio API failed:', err)
   }
   return hackathons
 }
