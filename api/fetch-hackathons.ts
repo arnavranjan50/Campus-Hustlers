@@ -5,8 +5,13 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 
 /* ── Firebase Admin Init ─────────────────────────────── */
 if (getApps().length === 0) {
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'campus-hustlers',
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID || 'campus-hustlers',
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey,
+    }),
   })
 }
 const db = getFirestore()
