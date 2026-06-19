@@ -49,6 +49,11 @@ function guessCategory(title: string, desc: string, tags: string[]): string {
   return 'Open Innovation'
 }
 
+/* ── Strip HTML tags ─────────────────────────────────── */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
 /* ── Mode Guesser ────────────────────────────────────── */
 function guessMode(text: string): 'Online' | 'Offline' | 'Hybrid' {
   const lower = text.toLowerCase()
@@ -92,7 +97,7 @@ async function fetchDevpost(): Promise<ScrapedHackathon[]> {
           registrationDeadline: h.submission_period_dates?.split(' - ')[1] || '',
           mode: guessMode(h.location || h.title || ''),
           category: guessCategory(h.title || '', h.tagline || '', h.themes?.map((t: any) => t.name) || []),
-          prize: h.prize_amount || 'Prizes available',
+          prize: h.prize_amount ? stripHtml(h.prize_amount) : 'Prizes available',
           teamSize: '1-5',
           location: h.location || 'Online',
           website: h.url || '',
