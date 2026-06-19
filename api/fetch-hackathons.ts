@@ -287,44 +287,84 @@ async function fetchMLH(): Promise<ScrapedHackathon[]> {
 async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
   const hackathons: ScrapedHackathon[] = []
   try {
-    // Devfolio's internal search API (returns JSON)
+    // Step 1: Get total count
+    const countRes = await fetch('https://api.devfolio.co/api/search/hackathons', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
+      },
+      body: JSON.stringify({ from: 0, size: 1 }),
+    })
+
+    if (!countRes.ok) {
+      console.log(`Devfolio API returned ${countRes.status}`)
+      return hackathons
+    }
+
+    const countData = await countRes.json()
+    const total = countData?.hits?.total?.value || countData?.hits?.total || 0
+    console.log(`Devfolio total hackathons: ${total}`)
+
+    if (total === 0) return hackathons
+
+    // Step 2: Fetch the last 100 entries (newest hackathons are at the end)
+    const startFrom = Math.max(0, total - 100)
     const res = await fetch('https://api.devfolio.co/api/search/hackathons', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
       },
-      body: JSON.stringify({
-        type: 'default',
-        from: 0,
-        size: 20,
-        status: ['upcoming', 'open'],
-      }),
+      body: JSON.stringify({ from: startFrom, size: 100 }),
     })
 
     if (!res.ok) {
-      console.log(`Devfolio API returned ${res.status}`)
+      console.log(`Devfolio API (page 2) returned ${res.status}`)
       return hackathons
     }
 
     const data = await res.json()
     const hits = data?.hits?.hits || []
+    const now = new Date()
 
     for (const hit of hits) {
       const h = hit._source || {}
       const name = h.name || ''
       const slug = h.slug || ''
-      const tagline = h.tagline || h.description || ''
+      const tagline = h.tagline || h.desc || h.description || ''
       const starts = h.starts_at || ''
       const ends = h.ends_at || ''
-      const regDeadline = h.reg_ends_at || ends
-      const hackMode = h.is_online ? 'Online' : (h.is_hybrid ? 'Hybrid' : 'Offline')
-      const loc = h.location || (h.is_online ? 'Online' : 'India')
-      const prizeText = h.prize_amount
-        ? `₹${Number(h.prize_amount).toLocaleString('en-IN')}`
-        : (h.prize_currency && h.prize_value ? `${h.prize_currency} ${h.prize_value}` : 'Prizes available')
 
-      // Convert ISO dates to readable format
+      // Skip hackathons that have already ended
+      if (ends) {
+        try {
+          const endDate = new Date(ends)
+          if (endDate < now) continue
+        } catch { /* keep if date can't be parsed */ }
+      }
+
+      // Extract reg_ends_at from nested hackathon_setting
+      const settings = h.hackathon_setting || h['hackathon.hackathon_setting'] || {}
+      const regEnds = (typeof settings === 'object' ? settings.reg_ends_at : '') || ''
+      const regDeadline = regEnds || ends
+
+      const isOnline = h.is_online === true
+      const isHybrid = (typeof settings === 'object' && settings.is_hybrid === true) || h.is_hybrid === true
+      const hackMode = isOnline ? 'Online' : (isHybrid ? 'Hybrid' : 'Offline')
+      const loc = h.location || (isOnline ? 'Online' : 'India')
+
+      // Build prize text
+      let prizeText = 'Prizes available'
+      const prizes = h.prizes
+      if (Array.isArray(prizes) && prizes.length > 0) {
+        prizeText = `${prizes.length} prize${prizes.length > 1 ? 's' : ''} available`
+      }
+
+      // Extract logo from settings
+      const logo = (typeof settings === 'object' ? settings.logo : '') || h.logo || h.cover_img || ''
+
+      // Convert ISO dates to YYYY-MM-DD
       const startDate = starts ? new Date(starts).toISOString().split('T')[0] : ''
       const endDate = ends ? new Date(ends).toISOString().split('T')[0] : ''
       const regEnd = regDeadline ? new Date(regDeadline).toISOString().split('T')[0] : ''
@@ -340,13 +380,13 @@ async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
           mode: hackMode,
           category: guessCategory(name, tagline, h.themes || []),
           prize: prizeText,
-          teamSize: h.team_min && h.team_max ? `${h.team_min}-${h.team_max}` : '1-5',
+          teamSize: h.team_min && h.team_size ? `${h.team_min}-${h.team_size}` : '1-5',
           location: loc,
-          website: `https://devfolio.co/hackathons/${slug}`,
-          tags: (h.themes || []).slice(0, 5),
-          featured: h.is_featured || false,
+          website: `https://${slug}.devfolio.co`,
+          tags: (Array.isArray(h.themes) ? h.themes : []).slice(0, 5),
+          featured: h.featured || false,
           source: 'devfolio',
-          image: h.logo || '',
+          image: logo,
         })
       }
     }
