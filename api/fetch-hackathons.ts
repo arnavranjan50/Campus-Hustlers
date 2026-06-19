@@ -63,6 +63,77 @@ function guessMode(text: string): 'Online' | 'Offline' | 'Hybrid' {
   return 'Online'
 }
 
+/* ── India Filter ────────────────────────────────────── */
+const INDIAN_CITIES = [
+  'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai',
+  'kolkata', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'chandigarh',
+  'indore', 'bhopal', 'kochi', 'coimbatore', 'thiruvananthapuram',
+  'guwahati', 'noida', 'gurugram', 'gurgaon', 'greater noida',
+  'new delhi', 'nagpur', 'visakhapatnam', 'patna', 'vadodara',
+  'surat', 'kanpur', 'mysore', 'mysuru', 'mangalore', 'mangaluru',
+  'bhubaneswar', 'dehradun', 'raipur', 'ranchi', 'goa', 'manipal',
+  'vellore', 'warangal', 'tiruchirappalli', 'trichy', 'amritsar',
+  'varanasi', 'allahabad', 'prayagraj', 'agra', 'meerut', 'faridabad',
+  'rajkot', 'nashik', 'aurangabad', 'jodhpur', 'madurai', 'salem',
+  'hubli', 'belgaum', 'belagavi', 'dharwad', 'shimla', 'jammu',
+  'srinagar', 'gangtok', 'shillong', 'imphal', 'aizawl', 'kohima',
+  'itanagar', 'agartala', 'panaji', 'silvassa', 'daman', 'pondicherry',
+  'puducherry', 'kakinada', 'guntur', 'nellore', 'vijayawada',
+]
+
+function isIndian(hackathon: ScrapedHackathon): boolean {
+  // Always include online hackathons
+  if (hackathon.mode === 'Online') return true
+
+  const loc = (hackathon.location || '').toLowerCase()
+  // Direct India mention
+  if (loc.includes('india')) return true
+  // Check for known Indian cities
+  return INDIAN_CITIES.some(city => loc.includes(city))
+}
+
+/* ── Normalize City ──────────────────────────────────── */
+function normalizeCity(location: string): string {
+  const loc = location.toLowerCase().trim()
+  if (!loc || loc === 'online' || loc === 'virtual' || loc === 'remote' || loc === 'tbd') return 'Online'
+
+  // Map common aliases
+  const aliases: Record<string, string> = {
+    'bengaluru': 'Bangalore', 'bangalore': 'Bangalore',
+    'mumbai': 'Mumbai', 'bombay': 'Mumbai',
+    'new delhi': 'Delhi', 'delhi': 'Delhi', 'noida': 'Delhi NCR',
+    'gurugram': 'Delhi NCR', 'gurgaon': 'Delhi NCR', 'greater noida': 'Delhi NCR',
+    'faridabad': 'Delhi NCR', 'ghaziabad': 'Delhi NCR',
+    'hyderabad': 'Hyderabad', 'chennai': 'Chennai', 'madras': 'Chennai',
+    'kolkata': 'Kolkata', 'calcutta': 'Kolkata',
+    'pune': 'Pune', 'ahmedabad': 'Ahmedabad',
+    'jaipur': 'Jaipur', 'lucknow': 'Lucknow',
+    'chandigarh': 'Chandigarh', 'indore': 'Indore',
+    'bhopal': 'Bhopal', 'kochi': 'Kochi', 'ernakulam': 'Kochi',
+    'coimbatore': 'Coimbatore', 'goa': 'Goa', 'panaji': 'Goa',
+    'mysore': 'Mysore', 'mysuru': 'Mysore', 'manipal': 'Manipal',
+    'vellore': 'Vellore', 'guwahati': 'Guwahati',
+    'thiruvananthapuram': 'Thiruvananthapuram',
+    'bhubaneswar': 'Bhubaneswar', 'patna': 'Patna',
+    'nagpur': 'Nagpur', 'surat': 'Surat', 'vadodara': 'Vadodara',
+    'visakhapatnam': 'Visakhapatnam', 'vizag': 'Visakhapatnam',
+    'dehradun': 'Dehradun', 'ranchi': 'Ranchi', 'raipur': 'Raipur',
+    'vijayawada': 'Vijayawada',
+  }
+
+  for (const [key, city] of Object.entries(aliases)) {
+    if (loc.includes(key)) return city
+  }
+
+  // If contains 'india', try to extract city before comma
+  if (loc.includes('india')) {
+    const parts = location.split(',')
+    if (parts.length > 1) return parts[0].trim()
+  }
+
+  return location.trim()
+}
+
 /* ══════════════════════════════════════════════════════
    SCRAPERS
    ══════════════════════════════════════════════════════ */
@@ -344,8 +415,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Deduplicate
-    const unique = deduplicateHackathons(allHackathons)
-    console.log(`📦 Total unique hackathons: ${unique.length}`)
+    const deduped = deduplicateHackathons(allHackathons)
+    console.log(`📦 Total unique hackathons: ${deduped.length}`)
+
+    // Filter to India-only (including Online)
+    const unique = deduped.filter(isIndian)
+    console.log(`🇮🇳 India-filtered hackathons: ${unique.length}`)
+
+    // Normalize city names for location filter
+    for (const h of unique) {
+      h.location = normalizeCity(h.location)
+    }
 
     if (unique.length === 0) {
       console.log('⚠️ No hackathons found from any source. Skipping Firestore update.')

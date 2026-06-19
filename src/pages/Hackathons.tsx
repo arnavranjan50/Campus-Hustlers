@@ -56,6 +56,7 @@ function timeAgo(date: Date): string {
 export default function Hackathons() {
   const [activeCategory, setActiveCategory] = useState<HackathonCategory>('All')
   const [activeMode, setActiveMode] = useState<HackathonMode>('All')
+  const [activeLocation, setActiveLocation] = useState('All')
   const [hackathons, setHackathons] = useState<Hackathon[]>(staticHackathons)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -115,7 +116,22 @@ export default function Hackathons() {
     250
   )
 
-  /* combine search + category + mode filters */
+  /* extract unique locations for filter */
+  const locations = useMemo(() => {
+    const locs = new Set<string>()
+    hackathons.forEach((h) => {
+      if (h.location) locs.add(h.location)
+    })
+    // Sort: 'Online' first, then alphabetical
+    const sorted = Array.from(locs).sort((a, b) => {
+      if (a === 'Online') return -1
+      if (b === 'Online') return 1
+      return a.localeCompare(b)
+    })
+    return ['All', ...sorted]
+  }, [hackathons])
+
+  /* combine search + category + mode + location filters */
   const displayedHackathons = useMemo(() => {
     let result = searchFiltered
 
@@ -127,14 +143,19 @@ export default function Hackathons() {
       result = result.filter((h) => h.mode === activeMode)
     }
 
+    if (activeLocation !== 'All') {
+      result = result.filter((h) => h.location === activeLocation)
+    }
+
     return result
-  }, [searchFiltered, activeCategory, activeMode])
+  }, [searchFiltered, activeCategory, activeMode, activeLocation])
 
   const featuredCount = displayedHackathons.filter((h) => h.featured).length
 
   const clearAllFilters = () => {
     setActiveCategory('All')
     setActiveMode('All')
+    setActiveLocation('All')
     setQuery('')
   }
 
@@ -183,7 +204,7 @@ export default function Hackathons() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
           >
-            Find the best hackathons from around the world — compete, collaborate, and win incredible prizes.
+            Find the best hackathons across India — compete, collaborate, and win incredible prizes.
             {isLiveData && (
               <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--accent-gold)', marginTop: 'var(--space-2)', opacity: 0.8 }}>
                 <RefreshCw size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
@@ -255,6 +276,28 @@ export default function Hackathons() {
                 ))}
               </div>
             </div>
+
+            {/* Location Pills */}
+            {locations.length > 2 && (
+              <div className={s.filterRow}>
+                <span className={s.filterLabel}>
+                  <MapPin size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+                  Location
+                </span>
+                <div className={s.modePills}>
+                  {locations.map((loc) => (
+                    <button
+                      key={loc}
+                      className={`${s.modePill} ${activeLocation === loc ? s.modePillActive : ''}`}
+                      onClick={() => setActiveLocation(loc)}
+                    >
+                      {loc === 'All' ? <Compass size={14} /> : loc === 'Online' ? <Wifi size={14} /> : <MapPin size={14} />}
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Result Count */}
@@ -272,6 +315,9 @@ export default function Hackathons() {
               )}
               {activeMode !== 'All' && (
                 <span className={s.resultMode}> • {activeMode}</span>
+              )}
+              {activeLocation !== 'All' && (
+                <span className={s.resultMode}> • {activeLocation}</span>
               )}
               {query && (
                 <span className={s.resultQuery}> for "{query}"</span>
