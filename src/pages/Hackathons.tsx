@@ -187,7 +187,7 @@ export default function Hackathons() {
             {isLiveData && (
               <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--accent-gold)', marginTop: 'var(--space-2)', opacity: 0.8 }}>
                 <RefreshCw size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-                Live data • Refreshes automatically twice daily
+                Live data • Refreshes automatically once daily
                 {lastUpdated && ` • Updated ${timeAgo(lastUpdated)}`}
               </span>
             )}

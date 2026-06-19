@@ -16,16 +16,37 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatDateRange(start: string, end: string): string {
+  if (!start && !end) return 'Dates TBA'
+
   const startDate = new Date(start)
   const endDate = new Date(end)
-  const startFormatted = startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-  const endFormatted = endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-  return `${startFormatted} — ${endFormatted}`
+
+  const startValid = !isNaN(startDate.getTime())
+  const endValid = !isNaN(endDate.getTime())
+
+  if (startValid && endValid) {
+    const startFormatted = startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+    const endFormatted = endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    return `${startFormatted} — ${endFormatted}`
+  }
+  if (startValid) {
+    return startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+  // If dates aren't parseable but contain text, show the raw text
+  if (start && end) return `${start} — ${end}`
+  if (start) return start
+  if (end) return end
+  return 'Dates TBA'
 }
 
 export function getCountdown(deadline: string): string {
+  if (!deadline) return 'Open'
+
   const now = new Date()
   const target = new Date(deadline)
+
+  if (isNaN(target.getTime())) return 'Open'
+
   const diff = target.getTime() - now.getTime()
 
   if (diff <= 0) return 'Registration Closed'
