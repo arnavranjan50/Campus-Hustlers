@@ -287,13 +287,14 @@ async function fetchMLH(): Promise<ScrapedHackathon[]> {
 async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
   const hackathons: ScrapedHackathon[] = []
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
+    }
+
     // Step 1: Get total count
     const countRes = await fetch('https://api.devfolio.co/api/search/hackathons', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
-      },
+      method: 'POST', headers,
       body: JSON.stringify({ from: 0, size: 1 }),
     })
 
@@ -304,78 +305,69 @@ async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
 
     const countData = await countRes.json()
     const total = countData?.hits?.total?.value || countData?.hits?.total || 0
-    console.log(`Devfolio total hackathons: ${total}`)
-
+    console.log(`Devfolio total hackathons in DB: ${total}`)
     if (total === 0) return hackathons
 
-    // Step 2: Fetch the last 100 entries (newest hackathons are at the end)
-    const startFrom = Math.max(0, total - 100)
-    const res = await fetch('https://api.devfolio.co/api/search/hackathons', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; CampusHustlers/1.0)',
-      },
-      body: JSON.stringify({ from: startFrom, size: 100 }),
-    })
+    // Step 2: Scan ALL entries in parallel batches of 200
+    const BATCH_SIZE = 200
+    const batchPromises: Promise<any>[] = []
 
-    if (!res.ok) {
-      console.log(`Devfolio API (page 2) returned ${res.status}`)
-      return hackathons
+    for (let offset = 0; offset < total; offset += BATCH_SIZE) {
+      batchPromises.push(
+        fetch('https://api.devfolio.co/api/search/hackathons', {
+          method: 'POST', headers,
+          body: JSON.stringify({ from: offset, size: BATCH_SIZE }),
+        }).then(r => r.ok ? r.json() : null).catch(() => null)
+      )
     }
 
-    const data = await res.json()
-    const hits = data?.hits?.hits || []
+    const batchResults = await Promise.all(batchPromises)
     const now = new Date()
 
-    for (const hit of hits) {
-      const h = hit._source || {}
-      const name = h.name || ''
-      const slug = h.slug || ''
-      const tagline = h.tagline || h.desc || h.description || ''
-      const starts = h.starts_at || ''
-      const ends = h.ends_at || ''
+    for (const data of batchResults) {
+      if (!data?.hits?.hits) continue
 
-      // Skip hackathons that have already ended
-      if (ends) {
-        try {
-          const endDate = new Date(ends)
-          if (endDate < now) continue
-        } catch { /* keep if date can't be parsed */ }
-      }
+      for (const hit of data.hits.hits) {
+        const h = hit._source || {}
+        const ends = h.ends_at || ''
 
-      // Extract reg_ends_at from nested hackathon_setting
-      const settings = h.hackathon_setting || h['hackathon.hackathon_setting'] || {}
-      const regEnds = (typeof settings === 'object' ? settings.reg_ends_at : '') || ''
-      const regDeadline = regEnds || ends
+        // Skip entries with no end date or already ended
+        if (!ends) continue
+        try { if (new Date(ends) < now) continue } catch (_e) { continue }
 
-      const isOnline = h.is_online === true
-      const isHybrid = (typeof settings === 'object' && settings.is_hybrid === true) || h.is_hybrid === true
-      const hackMode = isOnline ? 'Online' : (isHybrid ? 'Hybrid' : 'Offline')
-      const loc = h.location || (isOnline ? 'Online' : 'India')
+        const name = h.name || ''
+        if (!name) continue
+        const slug = h.slug || ''
+        const tagline = h.tagline || h.desc || h.description || ''
+        const starts = h.starts_at || ''
 
-      // Build prize text
-      let prizeText = 'Prizes available'
-      const prizes = h.prizes
-      if (Array.isArray(prizes) && prizes.length > 0) {
-        prizeText = `${prizes.length} prize${prizes.length > 1 ? 's' : ''} available`
-      }
+        // Extract settings
+        const settings = h.hackathon_setting || h['hackathon.hackathon_setting'] || {}
+        const regEnds = (typeof settings === 'object' ? settings.reg_ends_at : '') || ''
+        const regDeadline = regEnds || ends
 
-      // Extract logo from settings
-      const logo = (typeof settings === 'object' ? settings.logo : '') || h.logo || h.cover_img || ''
+        const isOnline = h.is_online === true
+        const isHybrid = (typeof settings === 'object' && settings.is_hybrid === true) || h.is_hybrid === true
+        const hackMode = isOnline ? 'Online' : (isHybrid ? 'Hybrid' : 'Offline')
+        const loc = h.location || (isOnline ? 'Online' : 'India')
 
-      // Convert ISO dates to YYYY-MM-DD
-      const startDate = starts ? new Date(starts).toISOString().split('T')[0] : ''
-      const endDate = ends ? new Date(ends).toISOString().split('T')[0] : ''
-      const regEnd = regDeadline ? new Date(regDeadline).toISOString().split('T')[0] : ''
+        let prizeText = 'Prizes available'
+        if (Array.isArray(h.prizes) && h.prizes.length > 0) {
+          prizeText = `${h.prizes.length} prize${h.prizes.length > 1 ? 's' : ''} available`
+        }
 
-      if (name) {
+        const logo = (typeof settings === 'object' ? settings.logo : '') || h.logo || h.cover_img || ''
+
+        const startDate = starts ? new Date(starts).toISOString().split('T')[0] : ''
+        const endDateStr = new Date(ends).toISOString().split('T')[0]
+        const regEnd = regDeadline ? new Date(regDeadline).toISOString().split('T')[0] : ''
+
         hackathons.push({
           title: name,
           organizer: 'Devfolio',
           description: tagline,
           startDate,
-          endDate,
+          endDate: endDateStr,
           registrationDeadline: regEnd,
           mode: hackMode,
           category: guessCategory(name, tagline, h.themes || []),
@@ -390,6 +382,8 @@ async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
         })
       }
     }
+
+    console.log(`Devfolio upcoming hackathons found: ${hackathons.length}`)
   } catch (err) {
     console.error('Devfolio API failed:', err)
   }

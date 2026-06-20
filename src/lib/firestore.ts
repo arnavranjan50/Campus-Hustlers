@@ -217,8 +217,7 @@ export interface FirestoreHackathon {
 }
 
 export async function getLiveHackathons(): Promise<FirestoreHackathon[]> {
-  const q = query(collection(db, 'hackathons'), orderBy('fetchedAt', 'desc'))
-  const snap = await getDocs(q)
+  const snap = await getDocs(collection(db, 'hackathons'))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreHackathon))
 }
 
