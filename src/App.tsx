@@ -14,6 +14,7 @@ import About from './pages/About'
 import FAQ from './pages/FAQ'
 import BookingSuccess from './pages/BookingSuccess'
 import Loader from './components/Loader'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const location = useLocation()
@@ -27,20 +28,22 @@ function App() {
 
       <div className="app">
         <Navbar />
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/hackathons" element={<Hackathons />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/payment" element={<Payment />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/booking-success" element={<BookingSuccess />} />
-          </Routes>
-        </AnimatePresence>
+        <ErrorBoundary>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/hackathons" element={<Hackathons />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/payment" element={<Payment />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/booking-success" element={<BookingSuccess />} />
+            </Routes>
+          </AnimatePresence>
+        </ErrorBoundary>
         <Footer />
       </div>
     </>

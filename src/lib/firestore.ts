@@ -217,17 +217,27 @@ export interface FirestoreHackathon {
 }
 
 export async function getLiveHackathons(): Promise<FirestoreHackathon[]> {
-  const snap = await getDocs(collection(db, 'hackathons'))
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreHackathon))
+  try {
+    const snap = await getDocs(collection(db, 'hackathons'))
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreHackathon))
+  } catch (err) {
+    console.warn('getLiveHackathons failed:', err)
+    return []
+  }
 }
 
 export async function getHackathonsMeta(): Promise<{ lastFetchedAt: Date | null; totalCount: number } | null> {
-  const ref = doc(db, 'metadata', 'hackathons')
-  const snap = await getDoc(ref)
-  if (!snap.exists()) return null
-  const data = snap.data()
-  return {
-    lastFetchedAt: data.lastFetchedAt?.toDate?.() || null,
-    totalCount: data.totalCount || 0,
+  try {
+    const ref = doc(db, 'metadata', 'hackathons')
+    const snap = await getDoc(ref)
+    if (!snap.exists()) return null
+    const data = snap.data()
+    return {
+      lastFetchedAt: data.lastFetchedAt?.toDate?.() || null,
+      totalCount: data.totalCount || 0,
+    }
+  } catch (err) {
+    console.warn('getHackathonsMeta failed:', err)
+    return null
   }
 }
