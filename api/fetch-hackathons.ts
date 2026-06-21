@@ -375,7 +375,7 @@ async function fetchDevfolio(): Promise<ScrapedHackathon[]> {
           teamSize: h.team_min && h.team_size ? `${h.team_min}-${h.team_size}` : '1-5',
           location: loc,
           website: `https://${slug}.devfolio.co`,
-          tags: (Array.isArray(h.themes) ? h.themes : []).slice(0, 5),
+          tags: (Array.isArray(h.themes) ? h.themes : []).slice(0, 5).map((t: any) => typeof t === 'string' ? t : (t?.name || '')).filter(Boolean),
           featured: h.featured || false,
           source: 'devfolio',
           image: logo,

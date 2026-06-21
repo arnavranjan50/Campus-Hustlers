@@ -82,11 +82,14 @@ export default function HackathonCard({ hackathon }: HackathonCardProps) {
 
       {/* Tags */}
       <div className={s.tags}>
-        {hackathon.tags.map((tag) => (
-          <span key={tag} className={s.tag}>
-            {tag}
-          </span>
-        ))}
+        {(hackathon.tags || []).map((tag, i) => {
+          const label = typeof tag === 'string' ? tag : (tag as any)?.name || String(tag)
+          return (
+            <span key={`${label}-${i}`} className={s.tag}>
+              {label}
+            </span>
+          )
+        })}
       </div>
 
       {/* Register button */}

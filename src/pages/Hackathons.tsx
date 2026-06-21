@@ -87,7 +87,7 @@ export default function Hackathons() {
             teamSize: h.teamSize,
             location: h.location,
             website: h.website,
-            tags: h.tags || [],
+            tags: (h.tags || []).map((t: any) => typeof t === 'string' ? t : (t?.name || String(t))),
             featured: h.featured,
             source: h.source,
           }))
