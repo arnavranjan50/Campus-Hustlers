@@ -11,6 +11,7 @@ import ServiceCard from '../components/ServiceCard'
 import HackathonCard from '../components/HackathonCard'
 import StatsCounter from '../components/StatsCounter'
 import TestimonialCard from '../components/TestimonialCard'
+import { useUser } from '../context/UserContext'
 
 import { services } from '../data/services'
 import { hackathons } from '../data/hackathons'
@@ -93,6 +94,7 @@ const testimonials = [
 /* ══════════════════════════════════════════════════════ */
 
 export default function Home() {
+  const { user } = useUser()
   /* intersection observers for animated sections */
   const [howRef, howInView] = useInView({ threshold: 0.15 })
   const [hackRef, hackInView] = useInView({ threshold: 0.1 })
@@ -280,18 +282,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ────── CTA BANNER ────── */}
-      <section className={s.ctaBanner}>
-        <div className={`container ${s.ctaContent}`}>
-          <h2 className={s.ctaHeading}>Ready to Start Your Hustle?</h2>
-          <p className={s.ctaSubtitle}>
-            Join thousands of students already earning on Campus Hustlers
-          </p>
-          <Link to="/signup" className={s.ctaButton}>
-            Get Started Now
-          </Link>
-        </div>
-      </section>
+      {/* ────── CTA BANNER (only when not logged in) ────── */}
+      {!user && (
+        <section className={s.ctaBanner}>
+          <div className={`container ${s.ctaContent}`}>
+            <h2 className={s.ctaHeading}>Ready to Start Your Hustle?</h2>
+            <p className={s.ctaSubtitle}>
+              Join thousands of students already earning on Campus Hustlers
+            </p>
+            <Link to="/signup" className={s.ctaButton}>
+              Get Started Now
+            </Link>
+          </div>
+        </section>
+      )}
     </motion.div>
   )
 }

@@ -117,21 +117,21 @@ export async function deleteService(id: string) {
 export async function getStudentServices(studentId: string): Promise<FirestoreService[]> {
   const q = query(
     collection(db, 'services'),
-    where('studentId', '==', studentId),
-    orderBy('createdAt', 'desc')
+    where('studentId', '==', studentId)
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreService))
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreService))
+  return results.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 export async function getAllActiveServices(): Promise<FirestoreService[]> {
   const q = query(
     collection(db, 'services'),
-    where('active', '==', true),
-    orderBy('createdAt', 'desc')
+    where('active', '==', true)
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreService))
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreService))
+  return results.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 /* ── Bookings ────────────────────────────────────────── */
@@ -147,21 +147,21 @@ export async function createBooking(booking: Omit<FirestoreBooking, 'id' | 'crea
 export async function getCustomerBookings(customerId: string): Promise<FirestoreBooking[]> {
   const q = query(
     collection(db, 'bookings'),
-    where('customerId', '==', customerId),
-    orderBy('createdAt', 'desc')
+    where('customerId', '==', customerId)
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreBooking))
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreBooking))
+  return results.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 export async function getStudentOrders(studentId: string): Promise<FirestoreBooking[]> {
   const q = query(
     collection(db, 'bookings'),
-    where('studentId', '==', studentId),
-    orderBy('createdAt', 'desc')
+    where('studentId', '==', studentId)
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreBooking))
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreBooking))
+  return results.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 /* ── Aggregation Helpers ─────────────────────────────── */
