@@ -268,7 +268,7 @@ export default function FAQ() {
               within 24 hours.
             </motion.p>
             <motion.div className={s.ctaActions} variants={staggerChild}>
-              <a href="mailto:hello@campushustlers.in" className="btn btn-primary btn-lg">
+              <a href="mailto:arnavranjan50@gmail.com" className="btn btn-primary btn-lg">
                 <Mail size={18} />
                 Contact Support
               </a>

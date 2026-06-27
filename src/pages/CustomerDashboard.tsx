@@ -575,7 +575,7 @@ export default function CustomerDashboard() {
           Need help? Reach out to us and we'll get back to you within 24 hours.
         </p>
         <div className={s.quickActions}>
-          <a href="mailto:support@campushustlers.in" className="btn btn-primary">
+          <a href="mailto:arnavranjan50@gmail.com" className="btn btn-primary">
             <MessageSquare size={16} /> Contact Support
           </a>
           <Link to="/faq" className="btn btn-outline">

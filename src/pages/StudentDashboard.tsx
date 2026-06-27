@@ -1060,7 +1060,7 @@ export default function StudentDashboard() {
           Need help? Reach out to us and we'll get back to you within 24 hours.
         </p>
         <div className={s.quickActions}>
-          <a href="mailto:support@campushustlers.in" style={{ textDecoration: 'none' }}>
+          <a href="mailto:arnavranjan50@gmail.com" style={{ textDecoration: 'none' }}>
             <button className="btn btn-primary">
               <MessageSquare size={16} /> Contact Support
             </button>
