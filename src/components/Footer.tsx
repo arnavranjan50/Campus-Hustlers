@@ -48,11 +48,11 @@ export default function Footer() {
           <div className={styles.column}>
             <h4 className={styles.columnTitle}>Services</h4>
             <ul className={styles.columnLinks}>
-              <li><Link to="/services" className={styles.columnLink}>Design</Link></li>
-              <li><Link to="/services" className={styles.columnLink}>Development</Link></li>
-              <li><Link to="/services" className={styles.columnLink}>Writing</Link></li>
-              <li><Link to="/services" className={styles.columnLink}>Marketing</Link></li>
-              <li><Link to="/services" className={styles.columnLink}>Tutoring</Link></li>
+              <li><Link to="/services?category=Design" className={styles.columnLink}>Design</Link></li>
+              <li><Link to="/services?category=Development" className={styles.columnLink}>Development</Link></li>
+              <li><Link to="/services?category=Writing" className={styles.columnLink}>Writing</Link></li>
+              <li><Link to="/services?category=Marketing" className={styles.columnLink}>Marketing</Link></li>
+              <li><Link to="/services?category=Tutoring" className={styles.columnLink}>Tutoring</Link></li>
             </ul>
           </div>
 

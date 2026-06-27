@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, SlidersHorizontal, Sparkles, PackageOpen, Plus, X, LogIn, UserPlus } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import ServiceCard from '../components/ServiceCard'
 import { services, categories } from '../data/services'
@@ -36,7 +36,11 @@ const staggerChild = {
 /* ══════════════════════════════════════════════════════ */
 
 export default function Services() {
-  const [activeCategory, setActiveCategory] = useState<Category>('All')
+  const [searchParams] = useSearchParams()
+  const urlCategory = searchParams.get('category') as Category | null
+  const [activeCategory, setActiveCategory] = useState<Category>(
+    urlCategory && categories.includes(urlCategory) ? urlCategory : 'All'
+  )
   const [showAuthModal, setShowAuthModal] = useState(false)
   const { isLoggedIn } = useUser()
   const navigate = useNavigate()
