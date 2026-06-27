@@ -333,10 +333,10 @@
 }
 
 .teamGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-6);
-  justify-items: center;
 }
 
 .teamCard {
