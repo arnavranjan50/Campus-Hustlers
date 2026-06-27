@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
@@ -14,7 +15,9 @@ import TestimonialCard from '../components/TestimonialCard'
 import { useUser } from '../context/UserContext'
 
 import { services } from '../data/services'
-import { hackathons } from '../data/hackathons'
+import { hackathons as staticHackathons } from '../data/hackathons'
+import type { Hackathon } from '../data/hackathons'
+import { getLiveHackathons } from '../lib/firestore'
 import { useInView } from '../hooks/useInView'
 
 import s from './Home.module.css'
@@ -47,7 +50,7 @@ const staggerChild = {
 
 /* ── Derived Data ────────────────────────────────────── */
 const featuredServices = services.filter((svc) => svc.featured)
-const featuredHackathons = hackathons.filter((h) => h.featured).slice(0, 3)
+const staticFeatured = staticHackathons.filter((h) => h.featured).slice(0, 3)
 
 const steps = [
   {
@@ -95,6 +98,44 @@ const testimonials = [
 
 export default function Home() {
   const { user } = useUser()
+  const [featuredHackathons, setFeaturedHackathons] = useState<Hackathon[]>(staticFeatured)
+
+  /* fetch live hackathons from Firestore */
+  useEffect(() => {
+    async function fetchLive() {
+      try {
+        const liveData = await getLiveHackathons()
+        if (liveData.length > 0) {
+          const mapped: Hackathon[] = liveData.map((h) => ({
+            id: h.id || `live-${Math.random().toString(36).slice(2)}`,
+            title: h.title,
+            organizer: h.organizer,
+            description: h.description,
+            startDate: h.startDate,
+            endDate: h.endDate,
+            registrationDeadline: h.registrationDeadline || h.endDate,
+            mode: h.mode,
+            category: h.category,
+            prize: h.prize,
+            teamSize: h.teamSize,
+            location: h.location,
+            website: h.website,
+            tags: (h.tags || []).map((t: any) => typeof t === 'string' ? t : (t?.name || String(t))),
+            featured: h.featured,
+            source: h.source,
+          }))
+          // Show featured first, then any others, limit to 3
+          const featured = mapped.filter((h) => h.featured)
+          const rest = mapped.filter((h) => !h.featured)
+          setFeaturedHackathons([...featured, ...rest].slice(0, 3))
+        }
+      } catch {
+        // Keep static data
+      }
+    }
+    fetchLive()
+  }, [])
+
   /* intersection observers for animated sections */
   const [howRef, howInView] = useInView({ threshold: 0.15 })
   const [hackRef, hackInView] = useInView({ threshold: 0.1 })
