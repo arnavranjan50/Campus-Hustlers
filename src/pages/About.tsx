@@ -296,7 +296,7 @@ export default function About() {
         <div className="container">
           <div className="section-header">
             <h2>Meet the Team</h2>
-            <p>The passionate students behind Campus Hustlers</p>
+            <p>The passionate student behind Campus Hustlers</p>
           </div>
 
           <motion.div
