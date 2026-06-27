@@ -52,46 +52,11 @@ const fadeUp = {
 /* ── Data ────────────────────────────────────────────── */
 const teamMembers = [
   {
-    name: 'Arjun Mehta',
+    name: 'Arnav Ranjan',
     role: 'Founder & CEO',
-    college: 'IIT Bombay',
-    avatar: 'AM',
+    college: 'Presidency University, Bangalore',
+    avatar: 'AR',
     bio: 'Full-stack developer passionate about creating platforms that empower student talent across India.',
-  },
-  {
-    name: 'Sneha Reddy',
-    role: 'Co-Founder & CTO',
-    college: 'IIT Hyderabad',
-    avatar: 'SR',
-    bio: 'Systems architect who believes in building technology that bridges the gap between education and opportunity.',
-  },
-  {
-    name: 'Rahul Verma',
-    role: 'Head of Design',
-    college: 'NID Ahmedabad',
-    avatar: 'RV',
-    bio: 'UX designer crafting intuitive, beautiful experiences that make Campus Hustlers a joy to use.',
-  },
-  {
-    name: 'Priya Sharma',
-    role: 'Head of Community',
-    college: 'BITS Pilani',
-    avatar: 'PS',
-    bio: 'Community builder dedicated to fostering connections and helping students find their first gig.',
-  },
-  {
-    name: 'Vikram Singh',
-    role: 'Lead Developer',
-    college: 'IIT Delhi',
-    avatar: 'VS',
-    bio: 'Backend engineer focused on scalability, ensuring the platform handles thousands of concurrent users seamlessly.',
-  },
-  {
-    name: 'Ananya Patel',
-    role: 'Marketing Lead',
-    college: 'MICA Ahmedabad',
-    avatar: 'AP',
-    bio: 'Growth strategist driving Campus Hustlers\'s presence across 200+ colleges nationwide.',
   },
 ]
 
@@ -386,7 +351,7 @@ export default function About() {
                 Explore Services
                 <ArrowRight size={18} />
               </Link>
-              <a href="mailto:hello@campushustlers.in" className="btn btn-outline btn-lg">
+              <a href="mailto:arnavranjan50@gmail.com" className="btn btn-outline btn-lg">
                 <Mail size={18} />
                 Get In Touch
               </a>
@@ -394,7 +359,7 @@ export default function About() {
             <motion.div className={s.ctaContact} variants={staggerChild}>
               <p>
                 <Mail size={14} />
-                <span>hello@campushustlers.in</span>
+                <span>arnavranjan50@gmail.com</span>
               </p>
             </motion.div>
           </motion.div>
