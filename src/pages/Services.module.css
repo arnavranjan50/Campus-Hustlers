@@ -125,8 +125,8 @@
 
 .searchInput {
   flex: 1;
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   font-size: var(--font-size-base);
   color: var(--text-primary);
   outline: none;
@@ -138,8 +138,10 @@
 }
 
 .searchInput:focus {
-  border: none;
-  box-shadow: none;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 .searchHint {
