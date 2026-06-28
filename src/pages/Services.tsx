@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, SlidersHorizontal, Sparkles, PackageOpen, Plus, X, LogIn, UserPlus } from 'lucide-react'
+import { Search, SlidersHorizontal, Sparkles, PackageOpen, Plus, X, LogIn, UserPlus, Loader2, CheckCircle } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import ServiceCard from '../components/ServiceCard'
-import { services, categories } from '../data/services'
-import type { Category } from '../data/services'
+import { services as staticServices, categories } from '../data/services'
+import type { Service, Category } from '../data/services'
 import { useSearch } from '../hooks/useSearch'
 import { useUser } from '../context/UserContext'
+import { addService, getAllActiveServices } from '../lib/firestore'
 
 import s from './Services.module.css'
 
@@ -42,14 +43,86 @@ export default function Services() {
     urlCategory && categories.includes(urlCategory) ? urlCategory : 'All'
   )
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const { isLoggedIn } = useUser()
+  const [showAddForm, setShowAddForm] = useState(false)
+  const { isLoggedIn, user } = useUser()
   const navigate = useNavigate()
+
+  /* ── Live services from Firestore ──────────────────── */
+  const [liveServices, setLiveServices] = useState<Service[]>([])
+  const [liveLoaded, setLiveLoaded] = useState(false)
+
+  const fetchLive = async () => {
+    try {
+      const data = await getAllActiveServices()
+      const mapped: Service[] = data.map((s) => ({
+        id: s.id || `fs-${Math.random().toString(36).slice(2)}`,
+        title: s.title,
+        category: s.category,
+        provider: s.studentName,
+        providerAvatar: s.studentName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??',
+        college: s.studentCollege || '',
+        rating: s.rating || 0,
+        reviews: s.reviews || 0,
+        price: s.price,
+        description: s.description,
+        tags: [],
+        deliveryTime: s.deliveryDays ? `${s.deliveryDays} days` : '3 days',
+        featured: false,
+      }))
+      setLiveServices(mapped)
+    } catch { /* keep empty */ }
+    setLiveLoaded(true)
+  }
+
+  useEffect(() => { fetchLive() }, [])
+
+  /* merged services: static + live from Firestore */
+  const services = useMemo(() => [...staticServices, ...liveServices], [liveServices])
+
+  /* ── Add Service Form State ───────────────────────── */
+  const [formData, setFormData] = useState({
+    title: '', category: 'Design', price: '', description: '', deliveryDays: '3',
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const handleAddService = () => {
     if (isLoggedIn) {
-      navigate('/dashboard')
+      setShowAddForm(true)
     } else {
       setShowAuthModal(true)
+    }
+  }
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setSubmitting(true)
+    try {
+      await addService({
+        title: formData.title,
+        category: formData.category,
+        price: Number(formData.price),
+        description: formData.description,
+        deliveryDays: Number(formData.deliveryDays) || 3,
+        studentId: user.uid,
+        studentName: user.displayName || user.email || 'Student',
+        studentCollege: '',
+        active: true,
+        rating: 0,
+        reviews: 0,
+      })
+      setSubmitSuccess(true)
+      setTimeout(() => {
+        setShowAddForm(false)
+        setSubmitSuccess(false)
+        setFormData({ title: '', category: 'Design', price: '', description: '', deliveryDays: '3' })
+        fetchLive() // refresh the list
+      }, 1500)
+    } catch (err) {
+      console.error('Failed to add service:', err)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -303,6 +376,177 @@ export default function Services() {
                   Sign Up
                 </button>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ────── ADD SERVICE FORM MODAL ────── */}
+      <AnimatePresence>
+        {showAddForm && (
+          <>
+            <motion.div
+              className={s.modalOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => setShowAddForm(false)}
+            />
+            <motion.div
+              className={s.modal}
+              style={{ maxWidth: 520, textAlign: 'left' }}
+              initial={{ opacity: 0, scale: 0.92, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 30 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <button
+                className={s.modalClose}
+                onClick={() => setShowAddForm(false)}
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
+
+              {submitSuccess ? (
+                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                  <CheckCircle size={48} style={{ color: '#22c55e', marginBottom: '1rem' }} />
+                  <h2 className={s.modalTitle}>Service Added!</h2>
+                  <p className={s.modalDesc}>
+                    Your service is now live. You can edit or delete it from your Dashboard.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleFormSubmit}>
+                  <h2 className={s.modalTitle} style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <Plus size={20} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                    Add Your Service
+                  </h2>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+                        Service Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Professional Logo Design"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        style={{
+                          width: '100%', padding: '0.7rem 1rem', background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                          color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+                          Category *
+                        </label>
+                        <select
+                          required
+                          value={formData.category}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          style={{
+                            width: '100%', padding: '0.7rem 1rem', background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                            color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
+                          }}
+                        >
+                          {categories.filter(c => c !== 'All').map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+                          Price (₹) *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          placeholder="500"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          style={{
+                            width: '100%', padding: '0.7rem 1rem', background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                            color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+                        Description *
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        placeholder="Describe what you offer..."
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        style={{
+                          width: '100%', padding: '0.7rem 1rem', background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                          color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
+                          resize: 'vertical', fontFamily: 'inherit',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+                        Delivery Time (days)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="3"
+                        value={formData.deliveryDays}
+                        onChange={(e) => setFormData({ ...formData, deliveryDays: e.target.value })}
+                        style={{
+                          width: '100%', padding: '0.7rem 1rem', background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                          color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ flex: 1 }}
+                      onClick={() => setShowAddForm(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                      disabled={submitting}
+                    >
+                      {submitting ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}
+                      {submitting ? 'Adding...' : 'Add Service'}
+                    </button>
+                  </div>
+
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>
+                    You can edit or delete your service from the Dashboard later.
+                  </p>
+                </form>
+              )}
             </motion.div>
           </>
         )}
