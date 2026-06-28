@@ -106,7 +106,7 @@ export default function Services() {
         description: formData.description,
         deliveryDays: Number(formData.deliveryDays) || 3,
         studentId: user.uid,
-        studentName: user.displayName || user.email || 'Student',
+        studentName: user.fullName || user.email || 'Student',
         studentCollege: '',
         active: true,
         rating: 0,
