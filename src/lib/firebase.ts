@@ -7,6 +7,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   type User,
@@ -43,5 +44,8 @@ export const emailSignUp = (email: string, password: string) =>
   createUserWithEmailAndPassword(auth, email, password)
 
 export const firebaseSignOut = () => signOut(auth)
+
+export const resetPassword = (email: string) =>
+  sendPasswordResetEmail(auth, email)
 
 export { onAuthStateChanged, type User }

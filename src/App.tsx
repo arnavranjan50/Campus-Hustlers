@@ -13,6 +13,7 @@ import Signup from './pages/Signup'
 import About from './pages/About'
 import FAQ from './pages/FAQ'
 import BookingSuccess from './pages/BookingSuccess'
+import ForgotPassword from './pages/ForgotPassword'
 import Loader from './components/Loader'
 import ErrorBoundary from './components/ErrorBoundary'
 
@@ -41,6 +42,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/booking-success" element={<BookingSuccess />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
             </Routes>
           </AnimatePresence>
         </ErrorBoundary>
