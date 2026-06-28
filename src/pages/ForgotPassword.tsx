@@ -56,7 +56,17 @@ export default function ForgotPassword() {
       exit="exit"
       transition={{ duration: 0.4 }}
     >
-      <div className={s.container}>
+      <section className={s.loginPage}>
+        {/* Background orbs */}
+        <div className={s.bgOrbs}>
+          <div className={s.orb1} />
+          <div className={s.orb2} />
+          <div className={s.orb3} />
+        </div>
+
+        {/* Grid lines decorative */}
+        <div className={s.gridLines} />
+
         <motion.div
           className={s.card}
           initial={{ opacity: 0, y: 30, scale: 0.97 }}
@@ -139,7 +149,7 @@ export default function ForgotPassword() {
             </form>
           )}
         </motion.div>
-      </div>
+      </section>
     </motion.div>
   )
 }
