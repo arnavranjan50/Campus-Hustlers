@@ -75,7 +75,9 @@ export default function ForgotPassword() {
         >
           {/* Branding */}
           <div className={s.branding}>
-            <div className={s.logo}>CH</div>
+            <div className={s.logoMark}>
+              <span className={s.logoIcon}>CH</span>
+            </div>
             <h1 className={s.title}>Reset Password</h1>
             <p className={s.subtitle}>
               {sent
